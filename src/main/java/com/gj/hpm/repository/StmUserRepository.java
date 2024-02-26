@@ -6,7 +6,6 @@ import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.data.mongodb.repository.Query;
 
 import com.gj.hpm.entity.User;
-import com.gj.hpm.entity.interfaces.emailFromUser;
 
 public interface StmUserRepository extends MongoRepository<User, String> {
         @Query("{'email': ?0}")
@@ -27,6 +26,4 @@ public interface StmUserRepository extends MongoRepository<User, String> {
         @Query("{'lineId': ?0}")
         Optional<User> findByLineId(String lineId);
 
-        @Query("{'lineId': ?0}")
-        Optional<emailFromUser> findIdByLineId(String lineId);
 }
