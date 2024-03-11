@@ -5,7 +5,6 @@ import lombok.Setter;
 
 @Getter
 @Setter
-
 public class SignInResp extends BaseResponse {
     private String token;
     private String email;

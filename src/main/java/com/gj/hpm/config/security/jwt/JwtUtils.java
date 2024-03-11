@@ -8,6 +8,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Component;
 
 import com.gj.hpm.config.security.services.UserDetailsImpl;
+import com.gj.hpm.entity.ERole;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
 
@@ -36,11 +37,23 @@ public class JwtUtils {
     return Jwts.builder()
         .setSubject(userPrincipal.getEmail())
         .setId(userPrincipal.getId())
-        .claim("lineId", userPrincipal.getLineId())
+        .claim("role", userPrincipal.getAuthorities().stream().findFirst().get().getAuthority())
         .setIssuedAt(new Date())
         .setExpiration(new Date((new Date()).getTime() + jwtExpirationMs))
         .signWith(key(), SignatureAlgorithm.HS256)
         .compact();
+  }
+
+  public boolean validateRole(String token){
+    try {
+      String tokenWithoutBearer = token.substring("Bearer ".length());
+      if (Jwts.parserBuilder().setSigningKey(key()).build().parseClaimsJws(tokenWithoutBearer).getBody().get("role").equals(ERole.ROLE_ADMIN.name())) {
+        return true;
+      }
+    } catch (Exception e){
+      log.error("Error validating role: " + e.getMessage());
+    }
+    return false;
   }
 
   private Key key() {
@@ -48,8 +61,24 @@ public class JwtUtils {
   }
 
   public String getEmailFromJwtToken(String token) {
-    return Jwts.parserBuilder().setSigningKey(key()).build()
+    try {
+      return Jwts.parserBuilder().setSigningKey(key()).build()
         .parseClaimsJws(token).getBody().getSubject();
+    } catch (Exception e) {
+      log.error("Error validating role: " + e.getMessage());
+    }
+    return null;
+  }
+
+  public String getEmailFromHeader(String header) {
+    try {
+      String tokenWithoutBearer = header.substring("Bearer ".length());
+      return Jwts.parserBuilder().setSigningKey(key()).build()
+        .parseClaimsJws(tokenWithoutBearer).getBody().getSubject();
+    } catch (Exception e) {
+      log.error("Error validating role: " + e.getMessage());
+    }
+    return null;
   }
 
   public boolean validateJwtToken(String authToken) {

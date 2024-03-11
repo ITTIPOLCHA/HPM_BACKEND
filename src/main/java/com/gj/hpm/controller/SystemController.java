@@ -1,6 +1,5 @@
 package com.gj.hpm.controller;
 
-import java.net.URL;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -24,8 +23,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.gj.hpm.config.security.jwt.JwtUtils;
 import com.gj.hpm.config.security.services.UserDetailsImpl;
-import com.gj.hpm.dto.request.SignInReq;
-import com.gj.hpm.dto.request.SignUpReq;
+import com.gj.hpm.dto.request.SignInRequest;
+import com.gj.hpm.dto.request.SignUpRequest;
 import com.gj.hpm.dto.response.BaseDetailsResp;
 import com.gj.hpm.dto.response.BaseResponse;
 import com.gj.hpm.dto.response.BaseStatusResp;
@@ -39,6 +38,7 @@ import com.gj.hpm.util.Constant.ApiReturn;
 import com.gj.hpm.util.Constant.Key;
 import com.gj.hpm.util.Constant.StatusFlag;
 import com.gj.hpm.util.Constant.TypeSignIn;
+import com.gj.hpm.util.Encryption;
 import com.nimbusds.jwt.JWTClaimsSet;
 
 import io.micrometer.common.util.StringUtils;
@@ -65,17 +65,16 @@ public class SystemController {
     JwtUtils jwtUtils;
 
     @PostMapping("/signIn")
-    public ResponseEntity<?> signIn(@Valid @RequestBody SignInReq req) {
+    public ResponseEntity<?> signIn(@Valid @RequestBody SignInRequest req) {
         try {
             Authentication authentication = null;
             if (TypeSignIn.line.toString().equals(req.getType())) {
                 JWTClaimsSet claimsSet = jwtUtils.decodeES256Jwt(req.getLineToken());
                 String lineId = claimsSet.getSubject();
-                User user = userRepository.findByLineId(lineId).orElse(null);
-                if (user == null)
-                    return ResponseEntity
-                            .badRequest()
-                            .body("Error: User not found!");
+                User user = userRepository.findByLineId(lineId).orElseThrow();
+                authentication = authenticationManager.authenticate(
+                        new UsernamePasswordAuthenticationToken(user.getEmail(),
+                                Encryption.decodedData(user.getLineSubId())));
             } else {
                 authentication = authenticationManager.authenticate(
                         new UsernamePasswordAuthenticationToken(req.getEmail(), req.getPassword()));
@@ -97,16 +96,22 @@ public class SystemController {
         }
     }
 
-    @SuppressWarnings("deprecation")
     @PostMapping("/signUp")
-    public ResponseEntity<?> signUp(@Valid @RequestBody SignUpReq req) {
+    public ResponseEntity<?> signUp(@Valid @RequestBody SignUpRequest req) {
         try {
             List<BaseDetailsResp> details = new ArrayList<>();
-            if (userRepository.existsByEmail(req.getEmail())) {
-                details.add(new BaseDetailsResp("Fail ❎", "Error: Email is already in use!"));
-                return ResponseEntity.badRequest().body(new BaseResponse(
-                        new BaseStatusResp(ApiReturn.BAD_REQUEST.code(), ApiReturn.BAD_REQUEST.description(),
-                                details)));
+            if (userRepository.existsByEmail(req.getEmail()))
+                details.add(new BaseDetailsResp("email", "อีเมลนี้ถูกใช้งานแล้ว"));
+            if (userRepository.existsByPhone(req.getPhone()))
+                details.add(new BaseDetailsResp("phone", "เบอร์นี้ถูกใช้งานแล้ว"));
+            if (userRepository.existsByHn(req.getHn()))
+                details.add(new BaseDetailsResp("hn", "หมายเลขผู้ป่วยนี้ถูกใช้งานแล้ว"));
+            if (details.size() > 0) {
+                return ResponseEntity
+                        .badRequest()
+                        .body(new BaseResponse(
+                                new BaseStatusResp(ApiReturn.BAD_REQUEST.code(), ApiReturn.BAD_REQUEST.description(),
+                                        details)));
             }
             // Create new user's account
             User user = new User();
@@ -122,11 +127,10 @@ public class SystemController {
                 JWTClaimsSet claimsSet = jwtUtils.decodeES256Jwt(req.getLineToken());
                 String name = claimsSet.getClaim(Key.name.toString()).toString();
                 String imageUrl = claimsSet.getClaim(Key.picture.toString()).toString();
-                URL url = new URL(imageUrl);
-                byte[] imageBytes = url.openStream().readAllBytes();
                 user.setLineId(claimsSet.getSubject());
+                user.setLineSubId(Encryption.encodedData(req.getPassword()));
                 user.setLineName(name);
-                user.setPicture(imageBytes);
+                user.setPictureUrl(imageUrl);
             }
             roles.add(role);
             user.setRoles(roles);
@@ -138,7 +142,7 @@ public class SystemController {
             user.setUpdateDate(now);
             user.setStatusFlag(StatusFlag.ACTIVE.code());
             userRepository.save(user);
-            details.add(new BaseDetailsResp("Success ✅", "User registered successfully!"));
+            details.add(new BaseDetailsResp("Success ✅", "สมัครสมาชิกสำเร็จ"));
             return ResponseEntity.ok(new BaseResponse(
                     new BaseStatusResp(ApiReturn.SUCCESS.code(), ApiReturn.SUCCESS.description(), details)));
         } catch (Exception e) {

@@ -13,7 +13,7 @@ import lombok.Setter;
 @Setter
 @Getter
 @Validated
-public class SignUpReq extends BaseRequest {
+public class SignUpRequest extends BaseRequest {
     @NotEmpty(message = "{notEmpty.message}")
     @Email(regexp = "[a-z0-9._%+-]+@[a-z0-9.-]+\\.[a-z]{2,3}", message = "{msg.signup.err.valid.email}")
     private String email;

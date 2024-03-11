@@ -22,8 +22,9 @@ public class User extends BaseEntity {
     private String lastName;
     // get from line token
     private String lineId;
+    private String lineSubId;
     private String lineName;
-    private byte[] picture;
+    private String pictureUrl;
     @DBRef
     private Set<Role> roles = new HashSet<>();
 
