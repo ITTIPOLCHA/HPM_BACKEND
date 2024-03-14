@@ -1,23 +1,12 @@
 # Stage 1: Build with Maven
-FROM maven:3.8.4-openjdk-17 AS builder
-
-WORKDIR /app
-
-COPY ./src ./src
-COPY ./pom.xml .
-
-RUN mvn clean package
-
+FROM maven:3.8.7-openjdk-18 AS builder
+COPY . .
+RUN mvn clean package -DskipTests
 # Stage 2: Create the final image
-FROM openjdk:17-oraclelinux8
-
-WORKDIR /app
-
-COPY --from=builder /app/target/*.jar app.jar
-
+FROM openjdk:18-jdk-slim
+COPY --from=build /target/*.jar app.jar
 EXPOSE 8880
-
-CMD ["java", "-jar", "app.jar"]
+ENTRYPOINT [ "java","-jar","/app.jar" ]
 
 
 # ARG JAR_FILE=target/*.jar
