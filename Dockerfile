@@ -6,7 +6,7 @@ WORKDIR /app
 COPY ./src ./src
 COPY ./pom.xml .
 
-RUN mvn clean package -DskipTests
+RUN mvn clean package
 
 # Stage 2: Create the final image
 FROM openjdk:17-oraclelinux8
