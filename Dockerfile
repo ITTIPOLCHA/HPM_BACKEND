@@ -9,7 +9,7 @@ COPY . .
 
 # Build the application
 RUN mvn -v
-RUN mvn clean package -pl app -am -DskipTests -e
+RUN mvn clean package -Pprod -DskipTests
 
 # ---- Package ---- #
 
@@ -17,10 +17,10 @@ RUN mvn clean package -pl app -am -DskipTests -e
 FROM amazoncorretto:21-alpine-jdk
 
 # Copy the built jar file to the runtime image
-COPY --from=BUILDER /target/*.jar /app/serializerstage.jar
+COPY --from=BUILDER /target/*.jar hpm.jar
 
 # Set the entrypoint
-CMD ["java", "-jar", "/app/app.jar"]
+CMD ["java", "-jar", "hpm.jar"]
 
 
 # ARG JAR_FILE=target/*.jar
