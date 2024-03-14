@@ -4,7 +4,7 @@ COPY . .
 RUN mvn clean package -DskipTests
 # Stage 2: Create the final image
 FROM openjdk:18-jdk-slim
-COPY --from=build /target/*.jar app.jar
+COPY --from=builder /target/*.jar app.jar
 EXPOSE 8880
 ENTRYPOINT [ "java","-jar","/app.jar" ]
 
