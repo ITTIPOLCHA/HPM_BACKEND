@@ -17,10 +17,10 @@ RUN mvn clean package -Pprod -DskipTests
 FROM amazoncorretto:21-alpine-jdk
 
 # Copy the built jar file to the runtime image
-COPY --from=BUILDER /app/target/*.jar hpm.jar
-
+COPY --from=BUILDER /target/hpm.jar demo.jar
+EXPOSE 8880
 # Set the entrypoint
-CMD ["java", "-jar", "hpm.jar"]
+CMD ["java", "-jar", "demo.jar"]
 
 
 # ARG JAR_FILE=target/*.jar
