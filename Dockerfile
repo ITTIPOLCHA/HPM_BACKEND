@@ -1,13 +1,22 @@
-FROM openjdk:21-jdk-oraclelinux8
+# Stage 1: Build with Maven
+FROM maven:3.8.4-openjdk-21 AS builder
 
-COPY ./src src/
-COPY ./pom.xml pom.xml
+WORKDIR /app
+
+COPY ./src ./src
+COPY ./pom.xml .
 
 RUN mvn clean package -DskipTests
 
-FROM openjdk:21-jdk-oraclelinux8
-COPY --from=builder target/*.jar app.jar
+# Stage 2: Create the final image
+FROM openjdk:21-oraclelinux8
+
+WORKDIR /app
+
+COPY --from=builder /app/target/*.jar app.jar
+
 EXPOSE 8880
+
 CMD ["java", "-jar", "app.jar"]
 
 # ARG JAR_FILE=target/*.jar
