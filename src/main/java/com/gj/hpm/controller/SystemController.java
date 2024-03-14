@@ -2,6 +2,7 @@ package com.gj.hpm.controller;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -13,7 +14,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -67,24 +70,22 @@ public class SystemController {
     @PostMapping("/signIn")
     public ResponseEntity<?> signIn(@Valid @RequestBody SignInRequest req) {
         try {
-            Authentication authentication = null;
             if (TypeSignIn.line.toString().equals(req.getType())) {
                 JWTClaimsSet claimsSet = jwtUtils.decodeES256Jwt(req.getLineToken());
                 String lineId = claimsSet.getSubject();
-                User user = userRepository.findByLineId(lineId).orElseThrow();
-                authentication = authenticationManager.authenticate(
-                        new UsernamePasswordAuthenticationToken(user.getEmail(),
-                                Encryption.decodedData(user.getLineSubId())));
-            } else {
-                authentication = authenticationManager.authenticate(
-                        new UsernamePasswordAuthenticationToken(req.getEmail(), req.getPassword()));
+                User user = userRepository.findByLineId(lineId)
+                        .orElseThrow(() -> new UsernameNotFoundException("User not found with Line ID: " + lineId));
+                req.setPassword(Encryption.decodedData(user.getLineSubId()));
             }
+            Authentication authentication = authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(req.getEmail(), req.getPassword()));
             SecurityContextHolder.getContext().setAuthentication(authentication);
             String jwt = jwtUtils.generateJwtToken(authentication);
             UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
             List<String> roles = userDetails.getAuthorities().stream()
-                    .map(item -> item.getAuthority())
+                    .map(GrantedAuthority::getAuthority)
                     .collect(Collectors.toList());
+
             return ResponseEntity.ok(new JwtResp(jwt,
                     userDetails.getId(),
                     userDetails.getEmail(),
@@ -92,63 +93,86 @@ public class SystemController {
         } catch (Exception e) {
             return ResponseEntity
                     .badRequest()
-                    .body(e.getMessage());
+                    .body(new BaseResponse(
+                            new BaseStatusResp(ApiReturn.BAD_REQUEST.code(), ApiReturn.BAD_REQUEST.description(),
+                                    Collections.singletonList(new BaseDetailsResp("Error ❌", "Failed to sign in")))));
         }
     }
 
     @PostMapping("/signUp")
-    public ResponseEntity<?> signUp(@Valid @RequestBody SignUpRequest req) {
+    public ResponseEntity<BaseResponse> signUp(@Valid @RequestBody SignUpRequest req) {
         try {
-            List<BaseDetailsResp> details = new ArrayList<>();
-            if (userRepository.existsByEmail(req.getEmail()))
-                details.add(new BaseDetailsResp("email", "อีเมลนี้ถูกใช้งานแล้ว"));
-            if (userRepository.existsByPhone(req.getPhone()))
-                details.add(new BaseDetailsResp("phone", "เบอร์นี้ถูกใช้งานแล้ว"));
-            if (userRepository.existsByHn(req.getHn()))
-                details.add(new BaseDetailsResp("hn", "หมายเลขผู้ป่วยนี้ถูกใช้งานแล้ว"));
-            if (details.size() > 0) {
+            List<BaseDetailsResp> details = validateSignUpRequest(req);
+            if (!details.isEmpty()) {
                 return ResponseEntity
                         .badRequest()
                         .body(new BaseResponse(
                                 new BaseStatusResp(ApiReturn.BAD_REQUEST.code(), ApiReturn.BAD_REQUEST.description(),
                                         details)));
             }
-            // Create new user's account
-            User user = new User();
-            BeanUtils.copyProperties(req, user);
-            user.setUsername(req.getEmail());
-            user.setPassword(encoder.encode(req.getPassword()));
-            Set<Role> roles = new HashSet<>();
-            Role role = new Role();
-            if (StringUtils.isBlank(req.getLineToken())) {
-                role = roleRepository.findByName(ERole.ROLE_ADMIN);
-            } else {
-                role = roleRepository.findByName(ERole.ROLE_USER);
-                JWTClaimsSet claimsSet = jwtUtils.decodeES256Jwt(req.getLineToken());
-                String name = claimsSet.getClaim(Key.name.toString()).toString();
-                String imageUrl = claimsSet.getClaim(Key.picture.toString()).toString();
-                user.setLineId(claimsSet.getSubject());
-                user.setLineSubId(Encryption.encodedData(req.getPassword()));
-                user.setLineName(name);
-                user.setPictureUrl(imageUrl);
-            }
-            roles.add(role);
-            user.setRoles(roles);
+
+            User user = createUserFromSignUpRequest(req);
+            setRoleAndAdditionalInfo(user, req);
+
             userRepository.save(user);
-            LocalDateTime now = LocalDateTime.now();
-            user.setCreateBy(user.getId());
-            user.setUpdateBy(user.getId());
-            user.setCreateDate(now);
-            user.setUpdateDate(now);
-            user.setStatusFlag(StatusFlag.ACTIVE.code());
-            userRepository.save(user);
-            details.add(new BaseDetailsResp("Success ✅", "สมัครสมาชิกสำเร็จ"));
+
             return ResponseEntity.ok(new BaseResponse(
-                    new BaseStatusResp(ApiReturn.SUCCESS.code(), ApiReturn.SUCCESS.description(), details)));
+                    new BaseStatusResp(ApiReturn.SUCCESS.code(), ApiReturn.SUCCESS.description(),
+                            Collections.singletonList(new BaseDetailsResp("Success ✅", "สมัครสมาชิกสำเร็จ")))));
+
         } catch (Exception e) {
+            // Log the exception
             return ResponseEntity
                     .badRequest()
-                    .body(e.getMessage());
+                    .body(new BaseResponse(
+                            new BaseStatusResp(ApiReturn.BAD_REQUEST.code(), ApiReturn.BAD_REQUEST.description(),
+                                    Collections.singletonList(new BaseDetailsResp("Error ❌", "Failed to sign up")))));
         }
     }
+
+    private List<BaseDetailsResp> validateSignUpRequest(SignUpRequest req) {
+        List<BaseDetailsResp> details = new ArrayList<>();
+        if (userRepository.existsByEmail(req.getEmail()))
+            details.add(new BaseDetailsResp("email", "อีเมลนี้ถูกใช้งานแล้ว"));
+        if (userRepository.existsByPhone(req.getPhone()))
+            details.add(new BaseDetailsResp("phone", "เบอร์นี้ถูกใช้งานแล้ว"));
+        if (userRepository.existsByHn(req.getHn()))
+            details.add(new BaseDetailsResp("hn", "หมายเลขผู้ป่วยนี้ถูกใช้งานแล้ว"));
+        return details;
+    }
+
+    private User createUserFromSignUpRequest(SignUpRequest req) {
+        User user = new User();
+        BeanUtils.copyProperties(req, user);
+        user.setUsername(req.getEmail());
+        user.setPassword(encoder.encode(req.getPassword()));
+        LocalDateTime now = LocalDateTime.now();
+        user.setCreateDate(now);
+        user.setUpdateDate(now);
+        user.setStatusFlag(StatusFlag.ACTIVE.code());
+        userRepository.save(user);
+        user.setCreateBy(user.getId());
+        user.setUpdateBy(user.getId());
+        return user;
+    }
+
+    private void setRoleAndAdditionalInfo(User user, SignUpRequest req) {
+        Set<Role> roles = new HashSet<>();
+        Role role;
+        if (StringUtils.isBlank(req.getLineToken())) {
+            role = roleRepository.findByName(ERole.ROLE_ADMIN);
+        } else {
+            role = roleRepository.findByName(ERole.ROLE_USER);
+            JWTClaimsSet claimsSet = jwtUtils.decodeES256Jwt(req.getLineToken());
+            String name = claimsSet.getClaim(Key.name.toString()).toString();
+            String imageUrl = claimsSet.getClaim(Key.picture.toString()).toString();
+            user.setLineId(claimsSet.getSubject());
+            user.setLineSubId(Encryption.encodedData(req.getPassword()));
+            user.setLineName(name);
+            user.setPictureUrl(imageUrl);
+        }
+        roles.add(role);
+        user.setRoles(roles);
+    }
+
 }

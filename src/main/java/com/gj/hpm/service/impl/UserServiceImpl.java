@@ -1,6 +1,7 @@
 package com.gj.hpm.service.impl;
 
-import java.util.ArrayList;
+import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.List;
 
 import org.apache.commons.lang3.StringUtils;
@@ -21,6 +22,8 @@ import org.springframework.transaction.annotation.Transactional;
 import com.gj.hpm.dto.request.BaseRequest;
 import com.gj.hpm.dto.request.GetUserByIdRequest;
 import com.gj.hpm.dto.request.GetUserPagingRequest;
+import com.gj.hpm.dto.request.UpdateUserByIdRequest;
+import com.gj.hpm.dto.request.UpdateUserByTokenRequest;
 import com.gj.hpm.dto.response.BaseDetailsResp;
 import com.gj.hpm.dto.response.BaseResponse;
 import com.gj.hpm.dto.response.BaseStatusResp;
@@ -45,20 +48,17 @@ public class UserServiceImpl implements UserService {
 
     @Transactional
     @Override
-    public GetUserByIdResp getUserById(GetUserByIdRequest req) {
+    public GetUserByIdResp getUserById(GetUserByIdRequest request) {
         // ? find user by id in database
-        GetUserByIdResp resp = stmUserRepository.findGetUserByIdRespByUser_id(req.getUserId()).orElse(null);
+        GetUserByIdResp resp = stmUserRepository.findGetUserByIdRespByUser_id(request.getUserId()).orElse(null);
 
         // ? set status
-        String code = (resp != null) ? ApiReturn.SUCCESS.code() : ApiReturn.NOT_FOUND.code();
-        String description = (resp != null) ? ApiReturn.SUCCESS.description() : ApiReturn.NOT_FOUND.description();
-        List<BaseDetailsResp> details = new ArrayList<>();
-        details.add(new BaseDetailsResp("User", (resp != null) ? "Successfully Get User Data" : "Not Found"));
-        if (resp == null)
-            resp = new GetUserByIdResp();
-        resp.setStatus(new BaseStatusResp(code, description, details));
+        resp.setStatus(new BaseStatusResp((resp != null) ? ApiReturn.SUCCESS.code() : ApiReturn.NOT_FOUND.code(),
+                (resp != null) ? ApiReturn.SUCCESS.description() : ApiReturn.NOT_FOUND.description(),
+                Collections.singletonList((resp != null) ? new BaseDetailsResp("Success ✅", "ดึงข้อมูลผู้ใช้สำเร็จ")
+                        : new BaseDetailsResp("Not Found ❌", "ไม่พบข้อมูลผู้ใช้"))));
 
-        return resp;
+        return (resp != null) ? resp : new GetUserByIdResp();
     }
 
     @Transactional
@@ -68,41 +68,38 @@ public class UserServiceImpl implements UserService {
         GetUserByTokenResp resp = stmUserRepository.findGetUserByTokenRespByEmail(email).orElse(null);
 
         // ? set status
-        String code = (resp != null) ? ApiReturn.SUCCESS.code() : ApiReturn.NOT_FOUND.code();
-        String description = (resp != null) ? ApiReturn.SUCCESS.description() : ApiReturn.NOT_FOUND.description();
-        List<BaseDetailsResp> details = new ArrayList<>();
-        details.add(new BaseDetailsResp("User", (resp != null) ? "Successfully Get User Data" : "Not Found"));
-        if (resp == null)
-            resp = new GetUserByTokenResp();
-        resp.setStatus(new BaseStatusResp(code, description, details));
+        resp.setStatus(new BaseStatusResp((resp != null) ? ApiReturn.SUCCESS.code() : ApiReturn.NOT_FOUND.code(),
+                (resp != null) ? ApiReturn.SUCCESS.description() : ApiReturn.NOT_FOUND.description(),
+                Collections.singletonList((resp != null) ? new BaseDetailsResp("Success ✅", "ดึงข้อมูลผู้ใช้สำเร็จ")
+                        : new BaseDetailsResp("Not Found ❌", "ไม่พบข้อมูลผู้ใช้"))));
 
-        return resp;
+        return (resp != null) ? resp : new GetUserByTokenResp();
     }
 
     // ! ==============================
     @Transactional
     @Override
-    public GetUserPagingResponse getUserPaging(GetUserPagingRequest req) {
-        Page<GetUserDetailPagingResponse> userPage = findByAggregation(req);
+    public GetUserPagingResponse getUserPaging(GetUserPagingRequest request) {
+        Page<GetUserDetailPagingResponse> userPage = findByAggregation(request);
 
         GetUserPagingResponse response = new GetUserPagingResponse();
         response.setUsers(userPage.getContent());
         response.setTotalPages(userPage.getTotalPages());
         response.setTotalItems(userPage.getTotalElements());
         response.setStatus(new BaseStatusResp(ApiReturn.SUCCESS.code(), ApiReturn.SUCCESS.description(),
-                null));
+                Collections.singletonList(new BaseDetailsResp("Success ✅", "ดึงข้อมูลผู้ใช้สำเร็จ"))));
 
         return response;
     }
 
-    private Page<GetUserDetailPagingResponse> findByAggregation(GetUserPagingRequest req) {
+    private Page<GetUserDetailPagingResponse> findByAggregation(GetUserPagingRequest request) {
 
-        Sort sort = MongoUtil.getSortFromRequest(req);
+        Sort sort = MongoUtil.getSortFromRequest(request);
 
-        Pageable pageable = PageRequest.of(req.getPage(), req.getSize(),
+        Pageable pageable = PageRequest.of(request.getPage(), request.getSize(),
                 sort.isEmpty() ? Sort.by(Sort.Order.asc("hn")) : sort);
 
-        Criteria criteria = setCriteria(req);
+        Criteria criteria = setCriteria(request);
 
         Aggregation aggregation = Aggregation.newAggregation(
                 Aggregation.match(criteria),
@@ -120,17 +117,17 @@ public class UserServiceImpl implements UserService {
         return new PageImpl<>(results, pageable, total);
     }
 
-    private Criteria setCriteria(GetUserPagingRequest req) {
+    private Criteria setCriteria(GetUserPagingRequest request) {
         Criteria criteria = new Criteria();
 
         criteria.and("lineId").ne(null);
 
-        addCriteriaIfNotEmpty(criteria, "firstName", req.getFirstName());
-        addCriteriaIfNotEmpty(criteria, "lastName", req.getLastName());
-        addCriteriaIfNotEmpty(criteria, "email", req.getEmail());
-        addCriteriaIfNotEmpty(criteria, "phone", req.getPhone());
-        addCriteriaIfNotEmpty(criteria, "hn", req.getHn());
-        addCriteriaIfNotEmpty(criteria, "statusFlag", req.getStatusFlag());
+        addCriteriaIfNotEmpty(criteria, "firstName", request.getFirstName());
+        addCriteriaIfNotEmpty(criteria, "lastName", request.getLastName());
+        addCriteriaIfNotEmpty(criteria, "email", request.getEmail());
+        addCriteriaIfNotEmpty(criteria, "phone", request.getPhone());
+        addCriteriaIfNotEmpty(criteria, "hn", request.getHn());
+        addCriteriaIfNotEmpty(criteria, "statusFlag", request.getStatusFlag());
 
         return criteria;
     }
@@ -142,15 +139,70 @@ public class UserServiceImpl implements UserService {
     }
     // ! ==============================
 
+    @Transactional
     @Override
-    public BaseResponse updateUserById(BaseRequest req) {
-        // User user = stmUserRepository.findById(req()).orElse(null);
-        return null;
+    public BaseResponse updateUserById(String id, UpdateUserByIdRequest request) {
+        User user = stmUserRepository.findById(request.getUserId()).orElse(null);
+        if (user != null) {
+            user.setFirstName(request.getFirstName());
+            user.setLastName(request.getLastName());
+            user.setEmail(request.getEmail());
+            user.setPhone(request.getPhone());
+            user.setHn(request.getHn());
+            user.setUpdateBy(id);
+            user.setUpdateDate(LocalDateTime.now());
+            stmUserRepository.save(user);
+            return new BaseResponse(new BaseStatusResp(ApiReturn.SUCCESS.code(), ApiReturn.SUCCESS.description(),
+                    Collections.singletonList(new BaseDetailsResp("Success ✅", "อัพเดทข้อมูลผู้ใช้สำเร็จ"))));
+        }
+        return new BaseResponse(new BaseStatusResp(ApiReturn.NOT_FOUND.code(), ApiReturn.NOT_FOUND.description(),
+                Collections.singletonList(new BaseDetailsResp("Not Found ❌", "ไม่พบข้อมูลผู้ใช้"))));
     }
 
+    @Transactional
     @Override
-    public GetUserByIdResp deleteUserById(BaseRequest req) {
-        // TODO Auto-generated method stub
-        return null;
+    public BaseResponse updateUserByToken(String id, UpdateUserByTokenRequest request) {
+        User user = stmUserRepository.findById(id).orElse(null);
+        if (user != null) {
+            user.setFirstName(request.getFirstName());
+            user.setLastName(request.getLastName());
+            user.setEmail(request.getEmail());
+            user.setPhone(request.getPhone());
+            user.setHn(request.getHn());
+            user.setUpdateBy(id);
+            user.setUpdateDate(LocalDateTime.now());
+            stmUserRepository.save(user);
+            return new BaseResponse(new BaseStatusResp(ApiReturn.SUCCESS.code(), ApiReturn.SUCCESS.description(),
+                    Collections.singletonList(new BaseDetailsResp("Success ✅", "อัพเดทข้อมูลผู้ใช้สำเร็จ"))));
+        }
+        return new BaseResponse(new BaseStatusResp(ApiReturn.NOT_FOUND.code(), ApiReturn.NOT_FOUND.description(),
+                Collections.singletonList(new BaseDetailsResp("Not Found ❌", "ไม่พบข้อมูลผู้ใช้"))));
     }
+
+    @Transactional
+    @Override
+    public BaseResponse deleteUserById(GetUserByIdRequest request) {
+        boolean valid = stmUserRepository.existsById(request.getUserId());
+        if (valid) {
+            stmUserRepository.deleteById(request.getUserId());
+            return new BaseResponse(new BaseStatusResp(ApiReturn.SUCCESS.code(), ApiReturn.SUCCESS.description(),
+                    Collections.singletonList(new BaseDetailsResp("Success ✅", "ลบข้อมูลผู้ใช้สำเร็จ"))));
+        }
+        return new BaseResponse(new BaseStatusResp(ApiReturn.NOT_FOUND.code(), ApiReturn.NOT_FOUND.description(),
+                Collections.singletonList(new BaseDetailsResp("Not Found ❌", "ไม่พบข้อมูลผู้ใช้"))));
+    }
+
+    @Transactional
+    @Override
+    public BaseResponse deleteUserByToken(String id, BaseRequest request) {
+        boolean valid = stmUserRepository.existsById(id);
+        if (valid) {
+            stmUserRepository.deleteById(id);
+            return new BaseResponse(new BaseStatusResp(ApiReturn.SUCCESS.code(), ApiReturn.SUCCESS.description(),
+                    Collections.singletonList(new BaseDetailsResp("Success ✅", "ลบข้อมูลผู้ใช้สำเร็จ"))));
+        }
+        return new BaseResponse(new BaseStatusResp(ApiReturn.NOT_FOUND.code(), ApiReturn.NOT_FOUND.description(),
+                Collections.singletonList(new BaseDetailsResp("Not Found ❌", "ไม่พบข้อมูลผู้ใช้"))));
+    }
+
 }

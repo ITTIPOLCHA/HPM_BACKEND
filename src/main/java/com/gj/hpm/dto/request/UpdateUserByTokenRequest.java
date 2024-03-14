@@ -2,22 +2,27 @@ package com.gj.hpm.dto.request;
 
 import org.springframework.validation.annotation.Validated;
 
-import com.gj.hpm.annotation.FixedValue;
+import com.gj.hpm.annotation.MobilePhone;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;
 import lombok.Setter;
 
-@Setter
 @Getter
+@Setter
 @Validated
-public class SignInRequest extends BaseRequest {
+public class UpdateUserByTokenRequest extends BaseRequest {
     @NotBlank(message = "{notEmpty.message}")
-    @FixedValue
-    private String type;
     @Email(regexp = "[a-z0-9._%+-]+@[a-z0-9.-]+\\.[a-z]{2,3}", message = "{msg.signup.err.valid.email}")
     private String email;
-    private String password;
-    private String lineToken;
+    @NotBlank(message = "{notEmpty.message}")
+    private String hn;
+    @NotBlank(message = "{notEmpty.message}")
+    @MobilePhone
+    private String phone;
+    @NotBlank(message = "{notEmpty.message}")
+    private String firstName;
+    @NotBlank(message = "{notEmpty.message}")
+    private String lastName;
 }

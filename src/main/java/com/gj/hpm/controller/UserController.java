@@ -13,6 +13,9 @@ import com.gj.hpm.config.security.jwt.JwtUtils;
 import com.gj.hpm.dto.request.BaseRequest;
 import com.gj.hpm.dto.request.GetUserByIdRequest;
 import com.gj.hpm.dto.request.GetUserPagingRequest;
+import com.gj.hpm.dto.request.UpdateUserByIdRequest;
+import com.gj.hpm.dto.request.UpdateUserByTokenRequest;
+import com.gj.hpm.dto.response.BaseResponse;
 import com.gj.hpm.dto.response.GetUserByIdResp;
 import com.gj.hpm.dto.response.GetUserByTokenResp;
 import com.gj.hpm.dto.response.GetUserPagingResponse;
@@ -69,10 +72,11 @@ public class UserController {
     // ! U
     // ? Update By Id
     @PostMapping("/a/updateUserById")
-    public ResponseEntity<?> updateUserById(@RequestBody BaseRequest request) {
+    public ResponseEntity<?> updateUserById(@RequestHeader("Authorization") String token,
+            @RequestBody UpdateUserByIdRequest request) {
         try {
-            // GetUserByIdResp response = userService.getUserById(token);
-            return ResponseEntity.ok().body(null);
+            BaseResponse response = userService.updateUserById(jwtUtils.getIdFromHeader(token), request);
+            return ResponseEntity.ok().body(response);
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
@@ -80,10 +84,11 @@ public class UserController {
 
     // * Update By Token
     @PostMapping("/u/updateUserByToken")
-    public ResponseEntity<?> updateUserByToken(@RequestHeader("Authorization") String token) {
+    public ResponseEntity<?> updateUserByToken(@RequestHeader("Authorization") String token,
+            @RequestBody UpdateUserByTokenRequest request) {
         try {
-            // GetUserByIdResp response = userService.getUserById(token);
-            return ResponseEntity.ok().body(null);
+            BaseResponse response = userService.updateUserByToken(jwtUtils.getIdFromHeader(token), request);
+            return ResponseEntity.ok().body(response);
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
@@ -92,10 +97,10 @@ public class UserController {
     // ! D
     // ? Delete By Id
     @PostMapping("/a/deleteUserById")
-    public ResponseEntity<?> deleteUserById(@RequestBody BaseRequest request) {
+    public ResponseEntity<?> deleteUserById(@RequestBody GetUserByIdRequest request) {
         try {
-            // GetUserByIdResp response = userService.getUserById(token);
-            return ResponseEntity.ok().body(null);
+            BaseResponse response = userService.deleteUserById(request);
+            return ResponseEntity.ok().body(response);
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
@@ -103,10 +108,11 @@ public class UserController {
 
     // * Delete By Token
     @PostMapping("/u/deleteUserByToken")
-    public ResponseEntity<?> deleteUserByToken(@RequestHeader("Authorization") String token) {
+    public ResponseEntity<?> deleteUserByToken(@RequestHeader("Authorization") String token,
+            @RequestBody BaseRequest request) {
         try {
-            // GetUserByIdResp response = userService.getUserById(token);
-            return ResponseEntity.ok().body(null);
+            BaseResponse response = userService.deleteUserByToken(jwtUtils.getIdFromHeader(token), request);
+            return ResponseEntity.ok().body(response);
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }

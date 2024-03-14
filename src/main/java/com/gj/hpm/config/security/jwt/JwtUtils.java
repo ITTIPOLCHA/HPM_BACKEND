@@ -81,6 +81,17 @@ public class JwtUtils {
     return null;
   }
 
+  public String getIdFromHeader(String header) {
+    try {
+      String tokenWithoutBearer = header.substring("Bearer ".length());
+      return Jwts.parserBuilder().setSigningKey(key()).build()
+        .parseClaimsJws(tokenWithoutBearer).getBody().getId();
+    } catch (Exception e) {
+      log.error("Error validating role: " + e.getMessage());
+    }
+    return null;
+  }
+
   public boolean validateJwtToken(String authToken) {
     try {
       Jwts.parserBuilder().setSigningKey(key()).build().parse(authToken);
