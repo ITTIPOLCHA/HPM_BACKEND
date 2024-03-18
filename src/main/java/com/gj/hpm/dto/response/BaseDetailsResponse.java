@@ -9,7 +9,7 @@ import lombok.Setter;
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
-public class BaseDetailsResp {
+public class BaseDetailsResponse {
     private String key;
     private String value;
 

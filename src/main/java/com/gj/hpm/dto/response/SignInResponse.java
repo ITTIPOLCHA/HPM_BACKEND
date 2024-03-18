@@ -5,7 +5,7 @@ import lombok.Setter;
 
 @Getter
 @Setter
-public class SignInResp extends BaseResponse {
+public class SignInResponse extends BaseResponse {
     private String token;
     private String email;
     private String name; // firstName + lastName

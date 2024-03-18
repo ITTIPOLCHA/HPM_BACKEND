@@ -7,15 +7,14 @@ import lombok.Setter;
 
 @Getter
 @Setter
-public class GetUserDetailPagingResponse extends BaseResponse {
+public class GetBloodPressureResponse extends BaseResponse {
     private String id;
-    private String email;
-    private String hn;
-    private String phone;
-    private String firstName;
-    private String lastName;
-    private String lineName;
+    private String sys;
+    private String dia;
+    private String pul;
     private String statusFlag;
+    private DropdownUserResp createBy;
+    private LocalDateTime createDate;
     private DropdownUserResp updateBy;
     private LocalDateTime updateDate;
 

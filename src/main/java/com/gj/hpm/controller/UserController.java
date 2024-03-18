@@ -16,9 +16,8 @@ import com.gj.hpm.dto.request.GetUserPagingRequest;
 import com.gj.hpm.dto.request.UpdateUserByIdRequest;
 import com.gj.hpm.dto.request.UpdateUserByTokenRequest;
 import com.gj.hpm.dto.response.BaseResponse;
-import com.gj.hpm.dto.response.GetUserByIdResp;
-import com.gj.hpm.dto.response.GetUserByTokenResp;
 import com.gj.hpm.dto.response.GetUserPagingResponse;
+import com.gj.hpm.dto.response.GetUserResponse;
 import com.gj.hpm.service.UserService;
 
 @CrossOrigin(origins = "*", maxAge = 3600)
@@ -39,7 +38,7 @@ public class UserController {
     @PostMapping("/a/getUserById")
     public ResponseEntity<?> getUserById(@RequestBody GetUserByIdRequest request) {
         try {
-            GetUserByIdResp response = userService.getUserById(request);
+            GetUserResponse response = userService.getUserById(request);
             return ResponseEntity.ok().body(response);
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());
@@ -51,7 +50,7 @@ public class UserController {
     public ResponseEntity<?> getUserByToken(@RequestHeader("Authorization") String token,
             @RequestBody BaseRequest request) {
         try {
-            GetUserByTokenResp response = userService.getUserByToken(jwtUtils.getEmailFromHeader(token));
+            GetUserResponse response = userService.getUserByToken(jwtUtils.getEmailFromHeader(token));
             return ResponseEntity.ok().body(response);
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());

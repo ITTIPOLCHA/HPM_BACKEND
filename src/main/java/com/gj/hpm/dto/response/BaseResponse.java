@@ -15,6 +15,6 @@ import lombok.Setter;
 @AllArgsConstructor
 @JsonInclude(com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL)
 public class BaseResponse implements Serializable {
-    private BaseStatusResp status;
+    private BaseStatusResponse status;
 
 }

@@ -7,7 +7,7 @@ import lombok.Setter;
 
 @Getter
 @Setter
-public class GetUserByIdResp extends BaseResponse {
+public class GetUserResponse extends BaseResponse {
     private String id;
     private String email;
     private String hn;
@@ -17,8 +17,21 @@ public class GetUserByIdResp extends BaseResponse {
     private String lineName;
     private String pictureUrl;
     private String statusFlag;
-    private String createBy;
+    private DropdownUserResp createBy;
     private LocalDateTime createDate;
-    private String updateBy;
+    private DropdownUserResp updateBy;
     private LocalDateTime updateDate;
+
+    /**
+     * InnerGeneralInformation
+     */
+    @Setter
+    @Getter
+    public class DropdownUserResp {
+        private String id;
+        private String username;
+        private String firstName;
+        private String lastName;
+        private String hn;
+    }
 }

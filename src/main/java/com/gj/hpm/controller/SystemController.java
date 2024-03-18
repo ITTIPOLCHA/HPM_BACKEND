@@ -28,10 +28,10 @@ import com.gj.hpm.config.security.jwt.JwtUtils;
 import com.gj.hpm.config.security.services.UserDetailsImpl;
 import com.gj.hpm.dto.request.SignInRequest;
 import com.gj.hpm.dto.request.SignUpRequest;
-import com.gj.hpm.dto.response.BaseDetailsResp;
+import com.gj.hpm.dto.response.BaseDetailsResponse;
 import com.gj.hpm.dto.response.BaseResponse;
-import com.gj.hpm.dto.response.BaseStatusResp;
-import com.gj.hpm.dto.response.JwtResp;
+import com.gj.hpm.dto.response.BaseStatusResponse;
+import com.gj.hpm.dto.response.JwtResponse;
 import com.gj.hpm.entity.ERole;
 import com.gj.hpm.entity.Role;
 import com.gj.hpm.entity.User;
@@ -86,7 +86,7 @@ public class SystemController {
                     .map(GrantedAuthority::getAuthority)
                     .collect(Collectors.toList());
 
-            return ResponseEntity.ok(new JwtResp(jwt,
+            return ResponseEntity.ok(new JwtResponse(jwt,
                     userDetails.getId(),
                     userDetails.getEmail(),
                     roles));
@@ -94,20 +94,22 @@ public class SystemController {
             return ResponseEntity
                     .badRequest()
                     .body(new BaseResponse(
-                            new BaseStatusResp(ApiReturn.BAD_REQUEST.code(), ApiReturn.BAD_REQUEST.description(),
-                                    Collections.singletonList(new BaseDetailsResp("Error ❌", "Failed to sign in")))));
+                            new BaseStatusResponse(ApiReturn.BAD_REQUEST.code(), ApiReturn.BAD_REQUEST.description(),
+                                    Collections
+                                            .singletonList(new BaseDetailsResponse("Error ❌", "Failed to sign in")))));
         }
     }
 
     @PostMapping("/signUp")
     public ResponseEntity<BaseResponse> signUp(@Valid @RequestBody SignUpRequest req) {
         try {
-            List<BaseDetailsResp> details = validateSignUpRequest(req);
+            List<BaseDetailsResponse> details = validateSignUpRequest(req);
             if (!details.isEmpty()) {
                 return ResponseEntity
                         .badRequest()
                         .body(new BaseResponse(
-                                new BaseStatusResp(ApiReturn.BAD_REQUEST.code(), ApiReturn.BAD_REQUEST.description(),
+                                new BaseStatusResponse(ApiReturn.BAD_REQUEST.code(),
+                                        ApiReturn.BAD_REQUEST.description(),
                                         details)));
             }
 
@@ -117,27 +119,28 @@ public class SystemController {
             userRepository.save(user);
 
             return ResponseEntity.ok(new BaseResponse(
-                    new BaseStatusResp(ApiReturn.SUCCESS.code(), ApiReturn.SUCCESS.description(),
-                            Collections.singletonList(new BaseDetailsResp("Success ✅", "สมัครสมาชิกสำเร็จ")))));
+                    new BaseStatusResponse(ApiReturn.SUCCESS.code(), ApiReturn.SUCCESS.description(),
+                            Collections.singletonList(new BaseDetailsResponse("Success ✅", "สมัครสมาชิกสำเร็จ")))));
 
         } catch (Exception e) {
             // Log the exception
             return ResponseEntity
                     .badRequest()
                     .body(new BaseResponse(
-                            new BaseStatusResp(ApiReturn.BAD_REQUEST.code(), ApiReturn.BAD_REQUEST.description(),
-                                    Collections.singletonList(new BaseDetailsResp("Error ❌", "Failed to sign up")))));
+                            new BaseStatusResponse(ApiReturn.BAD_REQUEST.code(), ApiReturn.BAD_REQUEST.description(),
+                                    Collections
+                                            .singletonList(new BaseDetailsResponse("Error ❌", "Failed to sign up")))));
         }
     }
 
-    private List<BaseDetailsResp> validateSignUpRequest(SignUpRequest req) {
-        List<BaseDetailsResp> details = new ArrayList<>();
+    private List<BaseDetailsResponse> validateSignUpRequest(SignUpRequest req) {
+        List<BaseDetailsResponse> details = new ArrayList<>();
         if (userRepository.existsByEmail(req.getEmail()))
-            details.add(new BaseDetailsResp("email", "อีเมลนี้ถูกใช้งานแล้ว"));
+            details.add(new BaseDetailsResponse("email", "อีเมลนี้ถูกใช้งานแล้ว"));
         if (userRepository.existsByPhone(req.getPhone()))
-            details.add(new BaseDetailsResp("phone", "เบอร์นี้ถูกใช้งานแล้ว"));
+            details.add(new BaseDetailsResponse("phone", "เบอร์นี้ถูกใช้งานแล้ว"));
         if (userRepository.existsByHn(req.getHn()))
-            details.add(new BaseDetailsResp("hn", "หมายเลขผู้ป่วยนี้ถูกใช้งานแล้ว"));
+            details.add(new BaseDetailsResponse("hn", "หมายเลขผู้ป่วยนี้ถูกใช้งานแล้ว"));
         return details;
     }
 
@@ -151,8 +154,8 @@ public class SystemController {
         user.setUpdateDate(now);
         user.setStatusFlag(StatusFlag.ACTIVE.code());
         userRepository.save(user);
-        user.setCreateBy(user.getId());
-        user.setUpdateBy(user.getId());
+        user.setCreateBy(User.builder().id(user.getId()).build());
+        user.setUpdateBy(User.builder().id(user.getId()).build());
         return user;
     }
 

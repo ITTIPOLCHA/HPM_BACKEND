@@ -6,14 +6,13 @@ import com.gj.hpm.dto.request.GetUserPagingRequest;
 import com.gj.hpm.dto.request.UpdateUserByIdRequest;
 import com.gj.hpm.dto.request.UpdateUserByTokenRequest;
 import com.gj.hpm.dto.response.BaseResponse;
-import com.gj.hpm.dto.response.GetUserByIdResp;
-import com.gj.hpm.dto.response.GetUserByTokenResp;
 import com.gj.hpm.dto.response.GetUserPagingResponse;
+import com.gj.hpm.dto.response.GetUserResponse;
 
 public interface UserService {
-    GetUserByIdResp getUserById(GetUserByIdRequest request);
+    GetUserResponse getUserById(GetUserByIdRequest request);
 
-    GetUserByTokenResp getUserByToken(String request);
+    GetUserResponse getUserByToken(String id);
 
     GetUserPagingResponse getUserPaging(GetUserPagingRequest request);
 

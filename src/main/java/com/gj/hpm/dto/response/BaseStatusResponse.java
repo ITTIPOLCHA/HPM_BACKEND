@@ -14,9 +14,9 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 @JsonInclude(com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL)
-public class BaseStatusResp {
+public class BaseStatusResponse {
     private String code;
     private String description;
-    private List<BaseDetailsResp> details;
+    private List<BaseDetailsResponse> details;
 
 }

@@ -5,8 +5,7 @@ import java.util.Optional;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.data.mongodb.repository.Query;
 
-import com.gj.hpm.dto.response.GetUserByIdResp;
-import com.gj.hpm.dto.response.GetUserByTokenResp;
+import com.gj.hpm.dto.response.GetUserResponse;
 import com.gj.hpm.entity.User;
 
 public interface StmUserRepository extends MongoRepository<User, String> {
@@ -14,11 +13,11 @@ public interface StmUserRepository extends MongoRepository<User, String> {
         Optional<User> findByEmail(String email);
 
         @Query("{'_id': ?0}")
-        Optional<GetUserByIdResp> findGetUserByIdRespByUser_id(String userId);
-        
+        Optional<GetUserResponse> findGetUserByIdRespByUser_id(String userId);
+
         @Query("{'email': ?0}")
-        Optional<GetUserByTokenResp> findGetUserByTokenRespByEmail(String email);
-        
+        Optional<GetUserResponse> findGetUserByTokenRespByEmail(String email);
+
         @Query("{'username': ?0}")
         Optional<User> findByUsername(String username);
 
@@ -29,7 +28,7 @@ public interface StmUserRepository extends MongoRepository<User, String> {
         Boolean existsByPhone(String phone);
 
         Boolean existsByHn(String hn);
-        
+
         // duplicate check in sign up
         @Query("{ $or: [ { 'email': ?0 }, { 'phone': ?1 }, {'hn':  ?2}, { $expr: { $eq: [ { $concat: ['$firstName', ' ', '$lastName'] }, ?3 ] } } ] }")
         Optional<User> findEmailOrPhoneOrHnOrFullName(String email, String phone, String hn, String fullName);
