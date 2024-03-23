@@ -75,6 +75,7 @@ public class SystemController {
                 String lineId = claimsSet.getSubject();
                 User user = userRepository.findByLineId(lineId)
                         .orElseThrow(() -> new UsernameNotFoundException("User not found with Line ID: " + lineId));
+                req.setEmail(user.getEmail());
                 req.setPassword(Encryption.decodedData(user.getLineSubId()));
             }
             Authentication authentication = authenticationManager.authenticate(
@@ -85,10 +86,10 @@ public class SystemController {
             List<String> roles = userDetails.getAuthorities().stream()
                     .map(GrantedAuthority::getAuthority)
                     .collect(Collectors.toList());
-
             return ResponseEntity.ok(new JwtResponse(jwt,
                     userDetails.getId(),
                     userDetails.getEmail(),
+                    userDetails.getName(),
                     roles));
         } catch (Exception e) {
             return ResponseEntity
@@ -96,7 +97,8 @@ public class SystemController {
                     .body(new BaseResponse(
                             new BaseStatusResponse(ApiReturn.BAD_REQUEST.code(), ApiReturn.BAD_REQUEST.description(),
                                     Collections
-                                            .singletonList(new BaseDetailsResponse("Error ❌", "Failed to sign in")))));
+                                            .singletonList(
+                                                    new BaseDetailsResponse("Error ❌", "เข้าสู่ระบบไม่สำเร็จ.")))));
         }
     }
 
@@ -104,32 +106,27 @@ public class SystemController {
     public ResponseEntity<BaseResponse> signUp(@Valid @RequestBody SignUpRequest req) {
         try {
             List<BaseDetailsResponse> details = validateSignUpRequest(req);
-            if (!details.isEmpty()) {
+            if (!details.isEmpty())
                 return ResponseEntity
                         .badRequest()
                         .body(new BaseResponse(
                                 new BaseStatusResponse(ApiReturn.BAD_REQUEST.code(),
                                         ApiReturn.BAD_REQUEST.description(),
                                         details)));
-            }
-
             User user = createUserFromSignUpRequest(req);
             setRoleAndAdditionalInfo(user, req);
-
             userRepository.save(user);
-
             return ResponseEntity.ok(new BaseResponse(
                     new BaseStatusResponse(ApiReturn.SUCCESS.code(), ApiReturn.SUCCESS.description(),
                             Collections.singletonList(new BaseDetailsResponse("Success ✅", "สมัครสมาชิกสำเร็จ")))));
-
         } catch (Exception e) {
-            // Log the exception
             return ResponseEntity
                     .badRequest()
                     .body(new BaseResponse(
                             new BaseStatusResponse(ApiReturn.BAD_REQUEST.code(), ApiReturn.BAD_REQUEST.description(),
                                     Collections
-                                            .singletonList(new BaseDetailsResponse("Error ❌", "Failed to sign up")))));
+                                            .singletonList(
+                                                    new BaseDetailsResponse("Error ❌", "สมัครสมาชิกไม่สำเร็จ.")))));
         }
     }
 

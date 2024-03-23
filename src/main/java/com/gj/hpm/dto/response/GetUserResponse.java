@@ -29,9 +29,7 @@ public class GetUserResponse extends BaseResponse {
     @Getter
     public class DropdownUserResp {
         private String id;
-        private String username;
         private String firstName;
         private String lastName;
-        private String hn;
     }
 }

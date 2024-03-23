@@ -26,9 +26,7 @@ public class GetUserDetailPagingResponse extends BaseResponse {
     @Getter
     public class DropdownUserResp {
         private String id;
-        private String username;
         private String firstName;
         private String lastName;
-        private String hn;
     }
 }

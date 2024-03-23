@@ -10,11 +10,14 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.gj.hpm.config.security.jwt.JwtUtils;
-import com.gj.hpm.dto.request.BaseRequest;
 import com.gj.hpm.dto.request.CreateBloodPressureRequest;
+import com.gj.hpm.dto.request.DeleteBloodPressureByIdRequest;
+import com.gj.hpm.dto.request.DeleteBloodPressureByTokenRequest;
 import com.gj.hpm.dto.request.GetBloodPressureByTokenPagingRequest;
 import com.gj.hpm.dto.request.GetBloodPressurePagingRequest;
 import com.gj.hpm.dto.request.GetBloodPressureRequest;
+import com.gj.hpm.dto.request.UpdateBloodPressureByIdRequest;
+import com.gj.hpm.dto.request.UpdateBloodPressureByTokenRequest;
 import com.gj.hpm.dto.response.BaseResponse;
 import com.gj.hpm.dto.response.GetBloodPressurePagingResponse;
 import com.gj.hpm.dto.response.GetBloodPressureResponse;
@@ -93,29 +96,51 @@ public class BloodPressureController {
         }
     }
 
-    // // ! U
-    // @PostMapping("/updateBloodPressure")
-    // public ResponseEntity<?> updateBloodPressure(@RequestHeader("Authorization")
-    // String token,
-    // @RequestBody CreateBloodPressureRequest request) {
-    // try {
-    // BaseResponse response = bloodPressureService.updateBloodPressure(request);
-    // return ResponseEntity.ok().body(response);
-    // } catch (Exception e) {
-    // return ResponseEntity.badRequest().body(e.getMessage());
-    // }
-    // }
+    // ! U
+    @PostMapping("/a/updateBloodPressureById")
+    public ResponseEntity<?> updateBloodPressureById(@RequestHeader("Authorization") String token,
+            @RequestBody UpdateBloodPressureByIdRequest request) {
+        try {
+            BaseResponse response = bloodPressureService.updateBloodPressureById(request);
+            return ResponseEntity.ok().body(response);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
 
-    // // ! D
-    // @PostMapping("/deleteBloodPressure")
-    // public ResponseEntity<?> deleteBloodPressure(@RequestHeader("Authorization")
-    // String token,
-    // @RequestBody CreateBloodPressureRequest request) {
-    // try {
-    // BaseResponse response = bloodPressureService.deleteBloodPressure(request);
-    // return ResponseEntity.ok().body(response);
-    // } catch (Exception e) {
-    // return ResponseEntity.badRequest().body(e.getMessage());
-    // }
-    // }
+    @PostMapping("/u/updateBloodPressureByToken")
+    public ResponseEntity<?> updateBloodPressureByToken(@RequestHeader("Authorization") String token,
+            @RequestBody UpdateBloodPressureByTokenRequest request) {
+        try {
+            BaseResponse response = bloodPressureService.updateBloodPressureByToken(jwtUtils.getIdFromHeader(token),
+                    request);
+            return ResponseEntity.ok().body(response);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    // ! D
+    @PostMapping("/a/deleteBloodPressureById")
+    public ResponseEntity<?> deleteBloodPressureById(@RequestHeader("Authorization") String token,
+            @RequestBody DeleteBloodPressureByIdRequest request) {
+        try {
+            BaseResponse response = bloodPressureService.deleteBloodPressureById(request);
+            return ResponseEntity.ok().body(response);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @PostMapping("/u/deleteBloodPressureByToken")
+    public ResponseEntity<?> deleteBloodPressureByToken(@RequestHeader("Authorization") String token,
+            @RequestBody DeleteBloodPressureByTokenRequest request) {
+        try {
+            BaseResponse response = bloodPressureService.deleteBloodPressureByToken(jwtUtils.getIdFromHeader(token),
+                    request);
+            return ResponseEntity.ok().body(response);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
 }

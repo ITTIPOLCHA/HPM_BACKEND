@@ -18,9 +18,6 @@ public interface StmUserRepository extends MongoRepository<User, String> {
         @Query("{'email': ?0}")
         Optional<GetUserResponse> findGetUserByTokenRespByEmail(String email);
 
-        @Query("{'username': ?0}")
-        Optional<User> findByUsername(String username);
-
         Boolean existsByUsername(String username);
 
         Boolean existsByEmail(String email);
@@ -28,10 +25,6 @@ public interface StmUserRepository extends MongoRepository<User, String> {
         Boolean existsByPhone(String phone);
 
         Boolean existsByHn(String hn);
-
-        // duplicate check in sign up
-        @Query("{ $or: [ { 'email': ?0 }, { 'phone': ?1 }, {'hn':  ?2}, { $expr: { $eq: [ { $concat: ['$firstName', ' ', '$lastName'] }, ?3 ] } } ] }")
-        Optional<User> findEmailOrPhoneOrHnOrFullName(String email, String phone, String hn, String fullName);
 
         // mismatch check in sign in
         @Query("{'lineId': ?0}")
