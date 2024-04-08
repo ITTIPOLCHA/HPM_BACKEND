@@ -1,10 +1,13 @@
 package com.gj.hpm.repository;
 
+import java.util.List;
 import java.util.Optional;
 
+import org.springframework.data.mongodb.repository.Aggregation;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.data.mongodb.repository.Query;
 
+import com.gj.hpm.dto.response.GetUserListResponse;
 import com.gj.hpm.dto.response.GetUserResponse;
 import com.gj.hpm.entity.User;
 
@@ -29,5 +32,10 @@ public interface StmUserRepository extends MongoRepository<User, String> {
         // mismatch check in sign in
         @Query("{'lineId': ?0}")
         Optional<User> findByLineId(String lineId);
+
+        @Aggregation(pipeline = {
+                        "{ $match : { lineId : { $exists : true } } }"
+        })
+        List<GetUserListResponse> findAllUserWithLineId();
 
 }

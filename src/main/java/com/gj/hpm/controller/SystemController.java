@@ -19,6 +19,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -66,6 +67,13 @@ public class SystemController {
 
     @Autowired
     JwtUtils jwtUtils;
+
+    @GetMapping("/ping")
+    public ResponseEntity<?> getMethodName() {
+        return ResponseEntity.ok(new BaseResponse(
+                new BaseStatusResponse(ApiReturn.SUCCESS.code(), ApiReturn.SUCCESS.description(),
+                        Collections.singletonList(new BaseDetailsResponse("Success ✅", "Ping Success")))));
+    }
 
     @PostMapping("/signIn")
     public ResponseEntity<?> signIn(@Valid @RequestBody SignInRequest req) {
