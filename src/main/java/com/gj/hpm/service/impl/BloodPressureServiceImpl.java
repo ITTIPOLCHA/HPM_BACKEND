@@ -237,7 +237,7 @@ public class BloodPressureServiceImpl implements BloodPressureService {
 
     @Override
     public BaseResponse deleteBloodPressureById(DeleteBloodPressureByIdRequest request) {
-        boolean validation = stpBloodPressureRepository.existsByIdAndCreateById(request.getBloodPressureId(), request.getUserId());
+        boolean validation = stpBloodPressureRepository.existsById(request.getBloodPressureId());
         if (validation) {
             stpBloodPressureRepository.deleteById(request.getBloodPressureId());
             return new BaseResponse(

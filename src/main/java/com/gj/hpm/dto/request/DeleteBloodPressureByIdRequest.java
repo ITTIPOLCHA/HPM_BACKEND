@@ -11,7 +11,5 @@ import lombok.Setter;
 @Validated
 public class DeleteBloodPressureByIdRequest extends BaseRequest {
     @NotBlank(message = "{notEmpty.message}")
-    private String userId;
-    @NotBlank(message = "{notEmpty.message}")
     private String bloodPressureId;
 }

@@ -21,5 +21,7 @@ public interface StpBloodPressureRepository extends MongoRepository<BloodPressur
 
     boolean existsByCreateDateAfterAndCreateById(LocalDateTime createDate, String createById);
 
+    boolean existsById(String id);
+
     boolean existsByIdAndCreateById(String id, String createById);
 }
