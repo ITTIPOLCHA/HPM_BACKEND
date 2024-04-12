@@ -142,8 +142,8 @@ public class BloodPressureServiceImpl implements BloodPressureService {
         addCriteriaIfNotEmpty(criteria, "dia", request.getDia());
         addCriteriaIfNotEmpty(criteria, "pul", request.getPul());
         addCriteriaIfNotEmpty(criteria, "statusFlag", request.getStatusFlag());
-        if (StringUtils.isNotEmpty(request.getCreateBy()))
-            criteria.and("createBy.$id").is(new ObjectId(request.getCreateBy()));
+        if (StringUtils.isNotEmpty(request.getUpdateBy()))
+            criteria.and("createBy.$id").is(new ObjectId(request.getUpdateBy()));
         return criteria;
     }
 
@@ -196,11 +196,12 @@ public class BloodPressureServiceImpl implements BloodPressureService {
     @Override
     public BaseResponse updateBloodPressureById(UpdateBloodPressureByIdRequest request) {
         BloodPressure bloodPressure = stpBloodPressureRepository
-                .findByIdAndCreateBy_Id(request.getBloodPressureId(), request.getUserId()).orElse(null);
+                .findById(request.getBloodPressureId()).orElse(null);
         if (bloodPressure != null) {
             bloodPressure.setSys(request.getSys());
             bloodPressure.setDia(request.getDia());
             bloodPressure.setPul(request.getPul());
+            bloodPressure.setCreateBy(User.builder().id(request.getUserId()).build());
             bloodPressure.setUpdateBy(User.builder().id(request.getUserId()).build());
             bloodPressure.setUpdateDate(LocalDateTime.now());
             stpBloodPressureRepository.save(bloodPressure);
