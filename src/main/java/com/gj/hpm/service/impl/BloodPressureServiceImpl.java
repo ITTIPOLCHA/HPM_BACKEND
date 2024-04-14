@@ -71,6 +71,9 @@ public class BloodPressureServiceImpl implements BloodPressureService {
             bloodPressure.setUpdateBy(User.builder().id(id).build());
             bloodPressure.setUpdateDate(LocalDateTime.now());
             stpBloodPressureRepository.save(bloodPressure);
+            User user = stmUserRepository.findById(id).orElse(null);
+            user.setStatusFlag(StatusFlag.ACTIVE.code());
+            user.setLevel("1");
             return new BaseResponse(
                     new BaseStatusResponse(ApiReturn.SUCCESS.code(), ApiReturn.SUCCESS.description(),
                             Collections.singletonList(

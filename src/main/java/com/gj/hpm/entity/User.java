@@ -31,6 +31,8 @@ public class User extends BaseEntity {
     private String lineSubId;
     private String lineName;
     private String pictureUrl;
+    // status
+    private String level; // warning1, warning2, danger, safe
     @DBRef
     private Set<Role> roles = new HashSet<>();
 

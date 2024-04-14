@@ -27,26 +27,8 @@ public class Constant {
         final public static double MINUTE_PER_SHIFT = 480;
         final public static String USER_LOGIN = "USER_LOGIN";
 
-        public enum IncomeType {
-                Income, Deduction, ROUNDING_TYPE, FREQUENCY_OF_PAYMENT, TAX_CALCULATION, INCOME_DEDUCTION;
-
-                @Override
-                public String toString() {
-                        return this.name();
-                }
-        }
-
         public enum Key {
                 email, username, password, mobileNumber, mobileCode, allowInitial, flagUser, line, user, picture, name;
-
-                @Override
-                public String toString() {
-                        return this.name();
-                }
-        }
-
-        public enum RegisterType {
-                DOMESTIC, OTHER;
 
                 @Override
                 public String toString() {
@@ -275,16 +257,18 @@ public class Constant {
                 Y, N
         }
 
-        public enum AdmInitMode {
-
-                INIT_LEAVE("INIT_LEAVE", "Initiail Leave");
+        public enum Level {
+                NORMAL("NORMAL", "Normal", "ปกติ"), WARNING("WARNING", "Warning", "คำเตือน"),
+                DANGER("DANGER", "Danger", "อันตราย");
 
                 private final String code;
-                private final String value;
+                private final String valueEn;
+                private final String valueTh;
 
-                AdmInitMode(String code, String value) {
+                Level(String code, String valueEn, String valueTh) {
                         this.code = code;
-                        this.value = value;
+                        this.valueEn = valueEn;
+                        this.valueTh = valueTh;
                 }
 
                 @Override
@@ -296,44 +280,14 @@ public class Constant {
                         return code;
                 }
 
-                public String value() {
-                        return value;
+                public String valueEn() {
+                        return valueEn;
                 }
 
-        }
-
-        public enum FlagUser {
-
-                SPECIAL("SPECIAL", "Special", "พิเศษ"), NORMAL("NORMAL", "Normal", "ปกติ"),
-                ADMIN("ADMIN", "Admin", "แอดมิน"),
-                USER("USER", "User", "ผู้ใช้");
-
-                private final String code;
-                private final String valueEN;
-                private final String valueTH;
-
-                FlagUser(String code, String valueEN, String valueTH) {
-                        this.code = code;
-                        this.valueEN = valueEN;
-                        this.valueTH = valueTH;
+                public String valueTh() {
+                        return valueTh;
                 }
 
-                @Override
-                public String toString() {
-                        return this.code;
-                }
-
-                public String code() {
-                        return code;
-                }
-
-                public String valueEN() {
-                        return valueEN;
-                }
-
-                public String valueTH() {
-                        return valueTH;
-                }
         }
 
         public enum StatusFlag {
@@ -368,305 +322,6 @@ public class Constant {
                         return valueTh;
                 }
 
-        }
-
-        public enum LeaveStatus {
-
-                WAIT_TO_APPROVE("WAIT_TO_APPROVE", "Wait To Approve", "รออนุมัติ"),
-                APPROVED("APPROVED", "Approved", "อนุมัติ"),
-                REJECTED("REJECTED", "Rejected", "ไม่อนุมัติ"), CANCEL("CANCEL", "Cancel", "ยกเลิก");
-
-                private final String code;
-                private final String valueEn;
-                private final String valueTh;
-
-                LeaveStatus(String code, String valueEn, String valueTh) {
-                        this.code = code;
-                        this.valueEn = valueEn;
-                        this.valueTh = valueTh;
-                }
-
-                @Override
-                public String toString() {
-                        return this.code;
-                }
-
-                public String code() {
-                        return code;
-                }
-
-                public String valueEn() {
-                        return valueEn;
-                }
-
-                public String valueTh() {
-                        return valueTh;
-                }
-
-        }
-
-        public enum LeaveType {
-
-                BUSINESS_LEAVE_PAID("BUSINESS_LEAVE_PAID", "Business Leave Paid", "ลากิจได้รับค่าจ้าง"),
-                BUSINESS_LEAVE_UNPAID("BUSINESS_LEAVE_UNPAID", "Business Leave Unpaid", "ลากิจไม่ได้รับค่าจ้าง"),
-                SICK_LEAVE_WITH_MEDICAL_CERTIFICATE("SICK_LEAVE_WITH_MEDICAL_CERTIFICATE",
-                                "Sick leave with medical certificate", "ลาป่วยมีใบรับรองแพทย์"),
-                MATERNITY_LEAVE_PAID("MATERNITY_LEAVE_PAID", "Maternity Leave Paid", "ลาคลอดได้รับค่าจ้าง"),
-                MATERNITY_LEAVE_UNPAID("MATERNITY_LEAVE_UNPAID", "Maternity Leave Unpaid", "ลาคลอดไม่ได้รับค่าจ้าง"),
-                ANNUAL_LEAVE("ANNUAL_LEAVE", "Annual Leave", "ลาพักร้อน"),
-                TRAINING_LEAVE("TRAINING_LEAVE", "Training leave", "ลาฝึกอบรม");
-
-                private final String code;
-                private final String valueEn;
-                private final String valueTh;
-
-                LeaveType(String code, String valueEn, String valueTh) {
-                        this.code = code;
-                        this.valueEn = valueEn;
-                        this.valueTh = valueTh;
-                }
-
-                @Override
-                public String toString() {
-                        return this.code;
-                }
-
-                public String code() {
-                        return code;
-                }
-
-                public String valueEn() {
-                        return valueEn;
-                }
-
-                public String valueTh() {
-                        return valueTh;
-                }
-
-        }
-
-        public enum LeaveMode {
-
-                HAFT_DAY("HAFT_DAY", "Haft Day", "ครึ่งวัน"), FULL_DAY("FULL_DAY", "Full Day", "ทั้งวัน");
-
-                private final String code;
-                private final String valueEn;
-                private final String valueTh;
-
-                LeaveMode(String code, String valueEn, String valueTh) {
-                        this.code = code;
-                        this.valueEn = valueEn;
-                        this.valueTh = valueTh;
-                }
-
-                @Override
-                public String toString() {
-                        return this.code;
-                }
-
-                public String code() {
-                        return code;
-                }
-
-                public String valueEn() {
-                        return valueEn;
-                }
-
-                public String valueTh() {
-                        return valueTh;
-                }
-
-        }
-
-        public enum NotificationTypeCount {
-
-                LEAVE_REQUEST_COUNT("LEAVE_REQUEST_COUNT", "จำนวนขอลา"),
-                LEAVE_WAITING_APPROVE_COUNT("LEAVE_WAITING_APPROVE_COUNT", "จำนวนรออนุมัติ");
-
-                private final String code;
-                private final String value;
-
-                NotificationTypeCount(String code, String value) {
-                        this.code = code;
-                        this.value = value;
-                }
-
-                @Override
-                public String toString() {
-                        return this.code;
-                }
-
-                public String code() {
-                        return code;
-                }
-
-                public String value() {
-                        return value;
-                }
-
-        }
-
-        public enum DayOfWeek {
-
-                MONDAY, TUESDAY, WEDNESDAY, THURSDAY, FRIDAY, SATURDAY, SUNDAY;
-
-                DayOfWeek() {
-                }
-
-        }
-
-        public enum ShiftType {
-
-                SAME_DAY, AFTER_MIDNIGHT_SHIFT, BEFORE_MIDNIGHT_SHIFT, TOTAL_WORKING_HOURS, NO_TIME_ATTENDANCE,
-                MULTIPLE_SHIFT;
-
-                ShiftType() {
-                }
-
-        }
-
-        public enum RequestType {
-
-                LEAVE("LEAVE", "Leave", "ขอลา"),
-                ADJUST_WORKING_DAY("ADJUST_WORKING_DAY", "Adjust Working Day", "ขอเพิ่มเวลาเข้างาน"),
-                OT("OT", "Overtime", "ขอโอที");
-
-                private final String code;
-                private final String valueEn;
-                private final String valueTh;
-
-                RequestType(String code, String valueEn, String valueTh) {
-                        this.code = code;
-                        this.valueEn = valueEn;
-                        this.valueTh = valueTh;
-                }
-
-                @Override
-                public String toString() {
-                        return this.code;
-                }
-
-                public String code() {
-                        return code;
-                }
-
-                public String valueEn() {
-                        return valueEn;
-                }
-
-                public String valueTh() {
-                        return valueTh;
-                }
-
-        }
-
-        public enum policyDetailType {
-
-                PARAGRAPH("PARAGRAPH", "Paragraph"),
-                LINK_ATTACHED("LINK_ATTACHED", "LinkAttached");
-
-                private final String code;
-                private final String valueEn;
-
-                policyDetailType(String code, String valueEn) {
-                        this.code = code;
-                        this.valueEn = valueEn;
-                }
-
-                @Override
-                public String toString() {
-                        return this.code;
-                }
-
-                public String code() {
-                        return code;
-                }
-
-                public String valueEn() {
-                        return valueEn;
-                }
-        }
-
-        public enum newsAnnouncementStatus {
-                PUBLISH("PUBLISH", "Publish"),
-                WAITING("WAITING", "Waiting"),
-                CANCEL("CANCEL", "Cancel"),
-                EXPIRE("EXPIRE", "Expire");
-
-                private final String code;
-                private final String valueEn;
-
-                newsAnnouncementStatus(String code, String valueEn) {
-                        this.code = code;
-                        this.valueEn = valueEn;
-                }
-
-                @Override
-                public String toString() {
-                        return this.code;
-                }
-
-                public String code() {
-                        return code;
-                }
-
-                public String valueEn() {
-                        return valueEn;
-                }
-        }
-
-        public enum newsAnnouncementType {
-                BROADCAST_NOW("BROADCAST_NOW", "BroadcastNow"),
-                SCHEDULE("SCHEDULE", "Schedule");
-
-                private final String code;
-                private final String valueEn;
-
-                newsAnnouncementType(String code, String valueEn) {
-                        this.code = code;
-                        this.valueEn = valueEn;
-                }
-
-                @Override
-                public String toString() {
-                        return this.code;
-                }
-
-                public String code() {
-                        return code;
-                }
-
-                public String valueEn() {
-                        return valueEn;
-                }
-        }
-
-        public enum deviceGroupType {
-                FINGERPRINT("65b724d2cacbac2df4bbb81e", "Fingerprint"),
-                BEACON("65b724d2cacbac2df4bbb81d", "Beacon"),
-                WIFI("65b724d2cacbac2df4bbb81c", "Wifi"),
-                GPS("65b724d2cacbac2df4bbb81b", "GPS");
-
-                private final String id;
-                private final String valueEn;
-
-                deviceGroupType(String id, String valueEn) {
-                        this.id = id;
-                        this.valueEn = valueEn;
-                }
-
-                @Override
-                public String toString() {
-                        return this.id;
-                }
-
-                public String id() {
-                        return id;
-                }
-
-                public String valueEn() {
-                        return valueEn;
-                }
         }
 
 }

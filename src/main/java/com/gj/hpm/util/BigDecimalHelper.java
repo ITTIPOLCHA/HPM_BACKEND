@@ -11,9 +11,4 @@ public class BigDecimalHelper {
         data = data.setScale(scale, roundingMode);
         return data.toString();
     }
-
-    // public static void main(String[] args) {
-    // System.out.println(convertBigDecimalToString(new BigDecimal("15.41"), 1,
-    // RoundingMode.UP));
-    // }
 }
