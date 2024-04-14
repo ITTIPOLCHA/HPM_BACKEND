@@ -38,4 +38,9 @@ public interface StmUserRepository extends MongoRepository<User, String> {
         })
         List<GetUserListResponse> findAllUserWithLineId();
 
+        @Aggregation(pipeline = {
+                        "{ $match : { lineId : { $exists : true } } }"
+        })
+        List<User> findAllUserWithLineIdInState();
+
 }

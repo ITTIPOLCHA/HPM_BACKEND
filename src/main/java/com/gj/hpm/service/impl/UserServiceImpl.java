@@ -107,6 +107,7 @@ public class UserServiceImpl implements UserService {
         addCriteriaIfNotEmpty(criteria, "phone", request.getPhone());
         addCriteriaIfNotEmpty(criteria, "hn", request.getHn());
         addCriteriaIfNotEmpty(criteria, "statusFlag", request.getStatusFlag());
+        addCriteriaIfNotEmpty(criteria, "level", request.getLevel());
         return criteria;
     }
 

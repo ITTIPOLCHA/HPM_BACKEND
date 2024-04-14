@@ -258,7 +258,8 @@ public class Constant {
         }
 
         public enum Level {
-                NORMAL("NORMAL", "Normal", "ปกติ"), WARNING("WARNING", "Warning", "คำเตือน"),
+                NORMAL("NORMAL", "Normal", "ปกติ"), WARNING1("WARNING1", "Warning1", "คำเตือน1"),
+                WARNING2("WARNING2", "Warning2", "คำเตือน2"),
                 DANGER("DANGER", "Danger", "อันตราย");
 
                 private final String code;

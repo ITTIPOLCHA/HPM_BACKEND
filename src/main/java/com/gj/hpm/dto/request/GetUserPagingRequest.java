@@ -20,4 +20,5 @@ public class GetUserPagingRequest extends BasePaginationRequest {
     private String phone;
     private String hn;
     private String statusFlag;
+    private String level;
 }

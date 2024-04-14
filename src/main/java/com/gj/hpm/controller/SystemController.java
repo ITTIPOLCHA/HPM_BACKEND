@@ -40,6 +40,7 @@ import com.gj.hpm.repository.StmRoleRepository;
 import com.gj.hpm.repository.StmUserRepository;
 import com.gj.hpm.util.Constant.ApiReturn;
 import com.gj.hpm.util.Constant.Key;
+import com.gj.hpm.util.Constant.Level;
 import com.gj.hpm.util.Constant.StatusFlag;
 import com.gj.hpm.util.Constant.TypeSignIn;
 import com.gj.hpm.util.Encryption;
@@ -157,7 +158,8 @@ public class SystemController {
         LocalDateTime now = LocalDateTime.now();
         user.setCreateDate(now);
         user.setUpdateDate(now);
-        user.setStatusFlag(StatusFlag.ACTIVE.code());
+        user.setStatusFlag(StatusFlag.INACTIVE.code());
+        user.setLevel(Level.NORMAL.toString());
         userRepository.save(user);
         user.setCreateBy(User.builder().id(user.getId()).build());
         user.setUpdateBy(User.builder().id(user.getId()).build());
