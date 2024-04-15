@@ -185,4 +185,36 @@ public class SystemController {
         user.setRoles(roles);
     }
 
+    @PostMapping("/setInactive")
+    public ResponseEntity<BaseResponse> setInactive() {
+        try {
+            // ดึงข้อมูลผู้ใช้ทั้งหมดจากฐานข้อมูล
+            List<User> users = userRepository.findAllUserWithLine();
+
+            // วนลูปผู้ใช้แต่ละคนเพื่อเปลี่ยนค่า statusFlag เป็น "Inactive"
+            for (User user : users) {
+                user.setStatusFlag(StatusFlag.INACTIVE.code());
+            }
+
+            // บันทึกการเปลี่ยนแปลงลงในฐานข้อมูล
+            userRepository.saveAll(users);
+
+            // ส่งคำตอบกลับว่าการดำเนินการเสร็จสิ้น
+            return ResponseEntity.ok(new BaseResponse(
+                    new BaseStatusResponse(ApiReturn.SUCCESS.code(), ApiReturn.SUCCESS.description(),
+                            Collections.singletonList(
+                                    new BaseDetailsResponse("Success ✅", "เปลี่ยนสถานะเป็น Inactive สำเร็จ")))));
+        } catch (Exception e) {
+            // หากเกิดข้อผิดพลาด ส่งคำตอบกลับว่าไม่สามารถดำเนินการได้
+            return ResponseEntity
+                    .badRequest()
+                    .body(new BaseResponse(
+                            new BaseStatusResponse(ApiReturn.BAD_REQUEST.code(), ApiReturn.BAD_REQUEST.description(),
+                                    Collections
+                                            .singletonList(
+                                                    new BaseDetailsResponse("Error ❌",
+                                                            "ไม่สามารถเปลี่ยนสถานะเป็น Inactive ได้")))));
+        }
+    }
+
 }
