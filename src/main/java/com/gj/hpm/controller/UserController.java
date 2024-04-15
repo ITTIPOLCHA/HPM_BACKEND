@@ -1,5 +1,7 @@
 package com.gj.hpm.controller;
 
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
@@ -16,6 +18,8 @@ import com.gj.hpm.dto.request.GetUserPagingRequest;
 import com.gj.hpm.dto.request.UpdateUserByIdRequest;
 import com.gj.hpm.dto.request.UpdateUserByTokenRequest;
 import com.gj.hpm.dto.response.BaseResponse;
+import com.gj.hpm.dto.response.GetUserListByLevelResponse;
+import com.gj.hpm.dto.response.GetUserListByStatusFlagResponse;
 import com.gj.hpm.dto.response.GetUserPagingResponse;
 import com.gj.hpm.dto.response.GetUserResponse;
 import com.gj.hpm.service.UserService;
@@ -36,7 +40,8 @@ public class UserController {
     // ! R
     // ? Get By Id
     @PostMapping("/a/getUserById")
-    public ResponseEntity<?> getUserById(@RequestBody GetUserByIdRequest request) {
+    public ResponseEntity<?> getUserById(@RequestHeader("Authorization") String token,
+            @RequestBody GetUserByIdRequest request) {
         try {
             GetUserResponse response = userService.getUserById(request);
             return ResponseEntity.ok().body(response);
@@ -59,9 +64,32 @@ public class UserController {
 
     // ? Get By Page
     @PostMapping("/a/getUserPaging")
-    public ResponseEntity<?> getUserPaging(@RequestBody GetUserPagingRequest request) {
+    public ResponseEntity<?> getUserPaging(@RequestHeader("Authorization") String token,
+            @RequestBody GetUserPagingRequest request) {
         try {
             GetUserPagingResponse response = userService.getUserPaging(request);
+            return ResponseEntity.ok().body(response);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @PostMapping("/getUserListByLevel")
+    public ResponseEntity<?> getUserListByLevel(@RequestHeader("Authorization") String token,
+            @RequestBody BaseRequest request) {
+        try {
+            List<GetUserListByLevelResponse> response = userService.getUserListByLevel();
+            return ResponseEntity.ok().body(response);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @PostMapping("/getUserListByStatusFlag")
+    public ResponseEntity<?> getUserListByStatusFlag(@RequestHeader("Authorization") String token,
+            @RequestBody BaseRequest request) {
+        try {
+            List<GetUserListByStatusFlagResponse> response = userService.getUserListByStatusFlag();
             return ResponseEntity.ok().body(response);
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());

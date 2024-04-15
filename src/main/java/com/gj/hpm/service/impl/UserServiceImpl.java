@@ -14,6 +14,10 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.aggregation.Aggregation;
 import org.springframework.data.mongodb.core.aggregation.AggregationResults;
+import org.springframework.data.mongodb.core.aggregation.ComparisonOperators;
+import org.springframework.data.mongodb.core.aggregation.ConditionalOperators;
+import org.springframework.data.mongodb.core.aggregation.ConditionalOperators.Switch.CaseOperator;
+import org.springframework.data.mongodb.core.aggregation.TypedAggregation;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.stereotype.Service;
@@ -28,12 +32,15 @@ import com.gj.hpm.dto.response.BaseDetailsResponse;
 import com.gj.hpm.dto.response.BaseResponse;
 import com.gj.hpm.dto.response.BaseStatusResponse;
 import com.gj.hpm.dto.response.GetUserDetailPagingResponse;
+import com.gj.hpm.dto.response.GetUserListByLevelResponse;
+import com.gj.hpm.dto.response.GetUserListByStatusFlagResponse;
 import com.gj.hpm.dto.response.GetUserPagingResponse;
 import com.gj.hpm.dto.response.GetUserResponse;
 import com.gj.hpm.entity.User;
 import com.gj.hpm.repository.StmUserRepository;
 import com.gj.hpm.service.UserService;
 import com.gj.hpm.util.Constant.ApiReturn;
+import com.gj.hpm.util.Constant.StatusFlag;
 import com.gj.hpm.util.MongoUtil;
 
 @Service
@@ -116,6 +123,41 @@ public class UserServiceImpl implements UserService {
             criteria.and(field).regex(".*" + value + ".*");
     }
     // ! ==============================
+
+    @Transactional
+    @Override
+    public List<GetUserListByLevelResponse> getUserListByLevel() {
+        CaseOperator[] conditions = new CaseOperator[] {
+                CaseOperator.when(ComparisonOperators.valueOf("level").equalToValue("DANGER")).then(4),
+                CaseOperator.when(ComparisonOperators.valueOf("level").equalToValue("WARNING2")).then(3),
+                CaseOperator.when(ComparisonOperators.valueOf("level").equalToValue("WARNING1")).then(2),
+                CaseOperator.when(ComparisonOperators.valueOf("level").equalToValue("NORMAL")).then(1)
+        };
+
+        ConditionalOperators.Switch switchCases = ConditionalOperators.switchCases(conditions)
+                .defaultTo(0);
+
+        TypedAggregation<User> aggregation = Aggregation.newAggregation(User.class,
+                Aggregation.match(Criteria.where("lineId").exists(true)), Aggregation.addFields()
+                        .addFieldWithValue("newLevel", switchCases)
+                        .build(),
+                Aggregation.sort(Sort.Direction.DESC, "newLevel"));
+
+        return mongoTemplate.aggregate(aggregation, "user",
+                GetUserListByLevelResponse.class).getMappedResults();
+    }
+
+    @Transactional
+    @Override
+    public List<GetUserListByStatusFlagResponse> getUserListByStatusFlag() {
+        TypedAggregation<User> aggregation = Aggregation.newAggregation(User.class,
+                Aggregation.match(Criteria.where("lineId").exists(true)),
+                Aggregation.match(Criteria.where("statusFlag").is(StatusFlag.INACTIVE.toString())),
+                Aggregation.sort(Sort.Direction.ASC, "hn"));
+
+        return mongoTemplate.aggregate(aggregation, "user",
+                GetUserListByStatusFlagResponse.class).getMappedResults();
+    }
 
     @Transactional
     @Override
