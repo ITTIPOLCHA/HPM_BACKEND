@@ -128,17 +128,18 @@ public class UserServiceImpl implements UserService {
     @Override
     public List<GetUserListByLevelResponse> getUserListByLevel() {
         CaseOperator[] conditions = new CaseOperator[] {
-                CaseOperator.when(ComparisonOperators.valueOf("level").equalToValue("DANGER")).then(4),
-                CaseOperator.when(ComparisonOperators.valueOf("level").equalToValue("WARNING2")).then(3),
-                CaseOperator.when(ComparisonOperators.valueOf("level").equalToValue("WARNING1")).then(2),
-                CaseOperator.when(ComparisonOperators.valueOf("level").equalToValue("NORMAL")).then(1)
+                CaseOperator.when(ComparisonOperators.valueOf("level").equalToValue("DANGER")).then(3),
+                CaseOperator.when(ComparisonOperators.valueOf("level").equalToValue("WARNING2")).then(2),
+                CaseOperator.when(ComparisonOperators.valueOf("level").equalToValue("WARNING1")).then(1)
         };
 
         ConditionalOperators.Switch switchCases = ConditionalOperators.switchCases(conditions)
                 .defaultTo(0);
 
         TypedAggregation<User> aggregation = Aggregation.newAggregation(User.class,
-                Aggregation.match(Criteria.where("lineId").exists(true)), Aggregation.addFields()
+                Aggregation.match(Criteria.where("lineId").exists(true)),
+                Aggregation.match(Criteria.where("level").ne("NORMAL")),
+                Aggregation.addFields()
                         .addFieldWithValue("newLevel", switchCases)
                         .build(),
                 Aggregation.sort(Sort.Direction.DESC, "newLevel"));
