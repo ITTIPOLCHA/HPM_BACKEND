@@ -12,4 +12,5 @@ public class GetUserListByStatusFlagResponse {
     private String hn;
     private String phone;
     private String statusFlag;
+    private String pictureUrl;
 }
