@@ -87,6 +87,7 @@ public class BloodPressureServiceImpl implements BloodPressureService {
                         } else {
                                 user.setLevel(Level.NORMAL.toString());
                         }
+                        stmUserRepository.save(user);
                         return new BaseResponse(
                                         new BaseStatusResponse(ApiReturn.SUCCESS.code(),
                                                         ApiReturn.SUCCESS.description(),
