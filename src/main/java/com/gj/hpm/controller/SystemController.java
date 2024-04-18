@@ -3,16 +3,20 @@ package com.gj.hpm.controller;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -29,6 +33,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.client.RestTemplate;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.gj.hpm.config.security.jwt.JwtUtils;
 import com.gj.hpm.config.security.services.UserDetailsImpl;
 import com.gj.hpm.dto.request.SignInRequest;
@@ -57,6 +62,9 @@ import jakarta.validation.Valid;
 @RestController
 @RequestMapping("/v1/system")
 public class SystemController {
+
+    @Value("${hpm.app.token.property}")
+    private String token;
 
     @Autowired
     AuthenticationManager authenticationManager;
@@ -130,47 +138,27 @@ public class SystemController {
             setRoleAndAdditionalInfo(user, req);
             userRepository.save(user);
 
-            // สร้าง RestTemplate instance
             RestTemplate restTemplate = new RestTemplate();
-
-            // สร้าง URL ของ API
             String apiUrl = "https://api.line.me/v2/bot/user/" + user.getLineId()
-                    + "/richmenu/richmenu-2bcfd59b0321bc812b62e5cab8abe967";
-
-            // สร้าง Header สำหรับการเรียก API ของ Line (ตัวอย่าง)
+                    + "/richmenu/richmenu-892817cfe69fc9969af37d3ef45025d8";
             HttpHeaders headers = new HttpHeaders();
-            headers.set("Authorization",
-                    "Bearer XM8RuR1Z8Hk76kp0YZTOsTsPzGVDbN1lymmTYgF3m4+UQDLQ0f6KYtgdXXbNDW9UG82ft3el7oDOpY1ixVtdGub4T2MiPnHqsRTQhJ3ilACURGY2FNxEyWhovVJPFiW4E5F3odqovSJ3FyGruV9aQgdB04t89/1O/w1cDnyilFU=");
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            headers.set("Authorization", "Bearer " + token);
+            String requestBody = "{}";
+            restTemplate.exchange(apiUrl, HttpMethod.POST, new HttpEntity<>(requestBody, headers), String.class);
 
-            // สร้างข้อมูล body ในรูปแบบของ String
-            String requestBody = "{}"; // ตัวอย่างเท่านี้เท่าที่สามารถใส่ข้อมูลเข้าไป
-            // String requestBody = "{\"key1\": \"value1\", \"key2\": \"value2\"}"; //
-            // ตัวอย่างเท่านี้เท่าที่สามารถใส่ข้อมูลเข้าไป
-
-            // สร้าง HTTP request
-            HttpEntity<String> requestEntity = new HttpEntity<>(requestBody, headers);
-
-            // เรียกใช้ API ด้วย RestTemplate
-            restTemplate.exchange(apiUrl, HttpMethod.POST, requestEntity,
-                    String.class);
-
-            // สร้าง URL ของ API
             apiUrl = "https://api.line.me/v2/bot/message/push";
-
-            // สร้างข้อมูล body ในรูปแบบของ String
-            requestBody = "{\n" +
-                    "    \"to\": \"" + user.getLineId() + "\",\n" +
-                    "    \"messages\":[\n" +
-                    "        {\n" +
-                    "            \"type\":\"text\",\n" +
-                    "            \"text\":\"ระบบได้บันทึกข้อมูลของท่านแล้ว กรุนาเข้าสู่ระบบ\"\n" +
-                    "        }\n" +
-                    "    ]\n" +
-                    "}";
-
-            requestEntity = new HttpEntity<>(requestBody, headers);
-
-            // เรียกใช้ API ด้วย RestTemplate
+            ObjectMapper objectMapper = new ObjectMapper();
+            Map<String, Object> requestBodyLine = new HashMap<>();
+            Map<String, Object> message = new HashMap<>();
+            message.put("type", "text");
+            message.put("text", "ระบบได้บันทึกข้อมูลของท่านแล้ว กรุนาเข้าสู่ระบบ");
+            List<Map<String, Object>> messages = new ArrayList<>();
+            messages.add(message);
+            requestBodyLine.put("messages", messages);
+            requestBodyLine.put("to", user.getLineId());
+            String jsonBody = objectMapper.writeValueAsString(requestBodyLine);
+            HttpEntity<String> requestEntity = new HttpEntity<>(jsonBody, headers);
             restTemplate.exchange(apiUrl, HttpMethod.POST, requestEntity,
                     String.class);
 
