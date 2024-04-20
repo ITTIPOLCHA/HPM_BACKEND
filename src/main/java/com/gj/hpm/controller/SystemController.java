@@ -63,195 +63,210 @@ import jakarta.validation.Valid;
 @RequestMapping("/v1/system")
 public class SystemController {
 
-    @Value("${hpm.app.token.property}")
-    private String token;
+        @Value("${hpm.app.token.property}")
+        private String token;
 
-    @Autowired
-    AuthenticationManager authenticationManager;
+        @Autowired
+        AuthenticationManager authenticationManager;
 
-    @Autowired
-    StmUserRepository userRepository;
+        @Autowired
+        StmUserRepository userRepository;
 
-    @Autowired
-    StmRoleRepository roleRepository;
+        @Autowired
+        StmRoleRepository roleRepository;
 
-    @Autowired
-    PasswordEncoder encoder;
+        @Autowired
+        PasswordEncoder encoder;
 
-    @Autowired
-    JwtUtils jwtUtils;
+        @Autowired
+        JwtUtils jwtUtils;
 
-    @GetMapping("/ping")
-    public ResponseEntity<?> getMethodName() {
-        return ResponseEntity.ok(new BaseResponse(
-                new BaseStatusResponse(ApiReturn.SUCCESS.code(), ApiReturn.SUCCESS.description(),
-                        Collections.singletonList(new BaseDetailsResponse("Success ✅", "Ping Success")))));
-    }
-
-    @PostMapping("/signIn")
-    public ResponseEntity<?> signIn(@Valid @RequestBody SignInRequest req) {
-        try {
-            if (TypeSignIn.line.toString().equals(req.getType())) {
-                JWTClaimsSet claimsSet = jwtUtils.decodeES256Jwt(req.getLineToken());
-                String lineId = claimsSet.getSubject();
-                User user = userRepository.findByLineId(lineId)
-                        .orElseThrow(() -> new UsernameNotFoundException("User not found with Line ID: " + lineId));
-                req.setEmail(user.getEmail());
-                req.setPassword(Encryption.decodedData(user.getLineSubId()));
-            }
-            Authentication authentication = authenticationManager.authenticate(
-                    new UsernamePasswordAuthenticationToken(req.getEmail(), req.getPassword()));
-            SecurityContextHolder.getContext().setAuthentication(authentication);
-            String jwt = jwtUtils.generateJwtToken(authentication);
-            UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
-            List<String> roles = userDetails.getAuthorities().stream()
-                    .map(GrantedAuthority::getAuthority)
-                    .collect(Collectors.toList());
-            return ResponseEntity.ok(new JwtResponse(jwt,
-                    userDetails.getId(),
-                    userDetails.getEmail(),
-                    userDetails.getName(),
-                    roles));
-        } catch (Exception e) {
-            return ResponseEntity
-                    .badRequest()
-                    .body(new BaseResponse(
-                            new BaseStatusResponse(ApiReturn.BAD_REQUEST.code(), ApiReturn.BAD_REQUEST.description(),
-                                    Collections
-                                            .singletonList(
-                                                    new BaseDetailsResponse("Error ❌", "เข้าสู่ระบบไม่สำเร็จ.")))));
+        @GetMapping("/ping")
+        public ResponseEntity<?> getMethodName() {
+                return ResponseEntity.ok(new BaseResponse(
+                                new BaseStatusResponse(ApiReturn.SUCCESS.code(), ApiReturn.SUCCESS.description(),
+                                                Collections.singletonList(new BaseDetailsResponse("Success ✅",
+                                                                "Ping Success")))));
         }
-    }
 
-    @PostMapping("/signUp")
-    public ResponseEntity<BaseResponse> signUp(@Valid @RequestBody SignUpRequest req) {
-        try {
-            List<BaseDetailsResponse> details = validateSignUpRequest(req);
-            if (!details.isEmpty())
-                return ResponseEntity
-                        .badRequest()
-                        .body(new BaseResponse(
-                                new BaseStatusResponse(ApiReturn.BAD_REQUEST.code(),
-                                        ApiReturn.BAD_REQUEST.description(),
-                                        details)));
-            User user = createUserFromSignUpRequest(req);
-            setRoleAndAdditionalInfo(user, req);
-            userRepository.save(user);
-
-            RestTemplate restTemplate = new RestTemplate();
-            String apiUrl = "https://api.line.me/v2/bot/user/" + user.getLineId()
-                    + "/richmenu/richmenu-892817cfe69fc9969af37d3ef45025d8";
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.APPLICATION_JSON);
-            headers.set("Authorization", "Bearer " + token);
-            String requestBody = "{}";
-            restTemplate.exchange(apiUrl, HttpMethod.POST, new HttpEntity<>(requestBody, headers), String.class);
-
-            apiUrl = "https://api.line.me/v2/bot/message/push";
-            ObjectMapper objectMapper = new ObjectMapper();
-            Map<String, Object> requestBodyLine = new HashMap<>();
-            Map<String, Object> message = new HashMap<>();
-            message.put("type", "text");
-            message.put("text", "ระบบได้บันทึกข้อมูลของท่านแล้ว กรุณาเข้าสู่ระบบ");
-            List<Map<String, Object>> messages = new ArrayList<>();
-            messages.add(message);
-            requestBodyLine.put("messages", messages);
-            requestBodyLine.put("to", user.getLineId());
-            String jsonBody = objectMapper.writeValueAsString(requestBodyLine);
-            HttpEntity<String> requestEntity = new HttpEntity<>(jsonBody, headers);
-            restTemplate.exchange(apiUrl, HttpMethod.POST, requestEntity,
-                    String.class);
-
-            return ResponseEntity.ok(new BaseResponse(
-                    new BaseStatusResponse(ApiReturn.SUCCESS.code(), ApiReturn.SUCCESS.description(),
-                            Collections.singletonList(new BaseDetailsResponse("Success ✅", "สมัครสมาชิกสำเร็จ")))));
-        } catch (Exception e) {
-            return ResponseEntity
-                    .badRequest()
-                    .body(new BaseResponse(
-                            new BaseStatusResponse(ApiReturn.BAD_REQUEST.code(), ApiReturn.BAD_REQUEST.description(),
-                                    Collections
-                                            .singletonList(
-                                                    new BaseDetailsResponse("Error ❌", "สมัครสมาชิกไม่สำเร็จ.")))));
+        @PostMapping("/signIn")
+        public ResponseEntity<?> signIn(@Valid @RequestBody SignInRequest req) {
+                try {
+                        if (TypeSignIn.line.toString().equals(req.getType())) {
+                                JWTClaimsSet claimsSet = jwtUtils.decodeES256Jwt(req.getLineToken());
+                                String lineId = claimsSet.getSubject();
+                                User user = userRepository.findByLineId(lineId)
+                                                .orElseThrow(() -> new UsernameNotFoundException(
+                                                                "User not found with Line ID: " + lineId));
+                                req.setEmail(user.getEmail());
+                                req.setPassword(Encryption.decodedData(user.getLineSubId()));
+                        }
+                        Authentication authentication = authenticationManager.authenticate(
+                                        new UsernamePasswordAuthenticationToken(req.getEmail(), req.getPassword()));
+                        SecurityContextHolder.getContext().setAuthentication(authentication);
+                        String jwt = jwtUtils.generateJwtToken(authentication);
+                        UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
+                        List<String> roles = userDetails.getAuthorities().stream()
+                                        .map(GrantedAuthority::getAuthority)
+                                        .collect(Collectors.toList());
+                        return ResponseEntity.ok(new JwtResponse(jwt,
+                                        userDetails.getId(),
+                                        userDetails.getEmail(),
+                                        userDetails.getName(),
+                                        roles));
+                } catch (Exception e) {
+                        return ResponseEntity
+                                        .badRequest()
+                                        .body(new BaseResponse(
+                                                        new BaseStatusResponse(ApiReturn.BAD_REQUEST.code(),
+                                                                        ApiReturn.BAD_REQUEST.description(),
+                                                                        Collections
+                                                                                        .singletonList(
+                                                                                                        new BaseDetailsResponse(
+                                                                                                                        "Error ❌",
+                                                                                                                        "เข้าสู่ระบบไม่สำเร็จ.")))));
+                }
         }
-    }
 
-    private List<BaseDetailsResponse> validateSignUpRequest(SignUpRequest req) {
-        List<BaseDetailsResponse> details = new ArrayList<>();
-        if (userRepository.existsByEmail(req.getEmail()))
-            details.add(new BaseDetailsResponse("email", "อีเมลนี้ถูกใช้งานแล้ว"));
-        if (userRepository.existsByPhone(req.getPhone()))
-            details.add(new BaseDetailsResponse("phone", "เบอร์นี้ถูกใช้งานแล้ว"));
-        if (userRepository.existsByHn(req.getHn()))
-            details.add(new BaseDetailsResponse("hn", "หมายเลขผู้ป่วยนี้ถูกใช้งานแล้ว"));
-        return details;
-    }
+        @PostMapping("/signUp")
+        public ResponseEntity<BaseResponse> signUp(@Valid @RequestBody SignUpRequest req) {
+                try {
+                        List<BaseDetailsResponse> details = validateSignUpRequest(req);
+                        if (!details.isEmpty())
+                                return ResponseEntity
+                                                .badRequest()
+                                                .body(new BaseResponse(
+                                                                new BaseStatusResponse(ApiReturn.BAD_REQUEST.code(),
+                                                                                ApiReturn.BAD_REQUEST.description(),
+                                                                                details)));
+                        User user = createUserFromSignUpRequest(req);
+                        setRoleAndAdditionalInfo(user, req);
+                        userRepository.save(user);
 
-    private User createUserFromSignUpRequest(SignUpRequest req) {
-        User user = new User();
-        BeanUtils.copyProperties(req, user);
-        user.setUsername(req.getEmail());
-        user.setPassword(encoder.encode(req.getPassword()));
-        LocalDateTime now = LocalDateTime.now();
-        user.setCreateDate(now);
-        user.setUpdateDate(now);
-        user.setStatusFlag(StatusFlag.INACTIVE.code());
-        user.setLevel(Level.NORMAL.toString());
-        userRepository.save(user);
-        user.setCreateBy(User.builder().id(user.getId()).build());
-        user.setUpdateBy(User.builder().id(user.getId()).build());
-        return user;
-    }
+                        RestTemplate restTemplate = new RestTemplate();
+                        String apiUrl = "https://api.line.me/v2/bot/user/" + user.getLineId()
+                                        + "/richmenu/richmenu-5b0061f18d8f11791f387a0062a77fde";
+                        HttpHeaders headers = new HttpHeaders();
+                        headers.setContentType(MediaType.APPLICATION_JSON);
+                        headers.set("Authorization", "Bearer " + token);
+                        String requestBody = "{}";
+                        restTemplate.exchange(apiUrl, HttpMethod.POST, new HttpEntity<>(requestBody, headers),
+                                        String.class);
 
-    private void setRoleAndAdditionalInfo(User user, SignUpRequest req) {
-        Set<Role> roles = new HashSet<>();
-        Role role;
-        if (StringUtils.isBlank(req.getLineToken())) {
-            role = roleRepository.findByName(ERole.ROLE_ADMIN);
-        } else {
-            role = roleRepository.findByName(ERole.ROLE_USER);
-            JWTClaimsSet claimsSet = jwtUtils.decodeES256Jwt(req.getLineToken());
-            String name = claimsSet.getClaim(Key.name.toString()).toString();
-            String imageUrl = claimsSet.getClaim(Key.picture.toString()).toString();
-            user.setLineId(claimsSet.getSubject());
-            user.setLineSubId(Encryption.encodedData(req.getPassword()));
-            user.setLineName(name);
-            user.setPictureUrl(imageUrl);
+                        apiUrl = "https://api.line.me/v2/bot/message/push";
+                        ObjectMapper objectMapper = new ObjectMapper();
+                        Map<String, Object> requestBodyLine = new HashMap<>();
+                        Map<String, Object> message = new HashMap<>();
+                        message.put("type", "text");
+                        message.put("text", "ระบบได้บันทึกข้อมูลของท่านแล้ว กรุณาเข้าสู่ระบบ");
+                        List<Map<String, Object>> messages = new ArrayList<>();
+                        messages.add(message);
+                        requestBodyLine.put("messages", messages);
+                        requestBodyLine.put("to", user.getLineId());
+                        String jsonBody = objectMapper.writeValueAsString(requestBodyLine);
+                        HttpEntity<String> requestEntity = new HttpEntity<>(jsonBody, headers);
+                        restTemplate.exchange(apiUrl, HttpMethod.POST, requestEntity,
+                                        String.class);
+
+                        return ResponseEntity.ok(new BaseResponse(
+                                        new BaseStatusResponse(ApiReturn.SUCCESS.code(),
+                                                        ApiReturn.SUCCESS.description(),
+                                                        Collections.singletonList(new BaseDetailsResponse("Success ✅",
+                                                                        "สมัครสมาชิกสำเร็จ")))));
+                } catch (Exception e) {
+                        return ResponseEntity
+                                        .badRequest()
+                                        .body(new BaseResponse(
+                                                        new BaseStatusResponse(ApiReturn.BAD_REQUEST.code(),
+                                                                        ApiReturn.BAD_REQUEST.description(),
+                                                                        Collections
+                                                                                        .singletonList(
+                                                                                                        new BaseDetailsResponse(
+                                                                                                                        "Error ❌",
+                                                                                                                        "สมัครสมาชิกไม่สำเร็จ.")))));
+                }
         }
-        roles.add(role);
-        user.setRoles(roles);
-    }
 
-    @PostMapping("/setInactive")
-    public ResponseEntity<BaseResponse> setInactive() {
-        try {
-            // ดึงข้อมูลผู้ใช้ทั้งหมดจากฐานข้อมูล
-            List<User> users = userRepository.findAllUserWithLine();
+        private List<BaseDetailsResponse> validateSignUpRequest(SignUpRequest req) {
+                List<BaseDetailsResponse> details = new ArrayList<>();
+                if (userRepository.existsByEmail(req.getEmail()))
+                        details.add(new BaseDetailsResponse("email", "อีเมลนี้ถูกใช้งานแล้ว"));
+                if (userRepository.existsByPhone(req.getPhone()))
+                        details.add(new BaseDetailsResponse("phone", "เบอร์นี้ถูกใช้งานแล้ว"));
+                if (userRepository.existsByHn(req.getHn()))
+                        details.add(new BaseDetailsResponse("hn", "หมายเลขผู้ป่วยนี้ถูกใช้งานแล้ว"));
+                return details;
+        }
 
-            // วนลูปผู้ใช้แต่ละคนเพื่อเปลี่ยนค่า statusFlag เป็น "Inactive"
-            for (User user : users) {
+        private User createUserFromSignUpRequest(SignUpRequest req) {
+                User user = new User();
+                BeanUtils.copyProperties(req, user);
+                user.setUsername(req.getEmail());
+                user.setPassword(encoder.encode(req.getPassword()));
+                LocalDateTime now = LocalDateTime.now();
+                user.setCreateDate(now);
+                user.setUpdateDate(now);
                 user.setStatusFlag(StatusFlag.INACTIVE.code());
-            }
-
-            // บันทึกการเปลี่ยนแปลงลงในฐานข้อมูล
-            userRepository.saveAll(users);
-
-            // ส่งคำตอบกลับว่าการดำเนินการเสร็จสิ้น
-            return ResponseEntity.ok(new BaseResponse(
-                    new BaseStatusResponse(ApiReturn.SUCCESS.code(), ApiReturn.SUCCESS.description(),
-                            Collections.singletonList(
-                                    new BaseDetailsResponse("Success ✅", "เปลี่ยนสถานะเป็น Inactive สำเร็จ")))));
-        } catch (Exception e) {
-            // หากเกิดข้อผิดพลาด ส่งคำตอบกลับว่าไม่สามารถดำเนินการได้
-            return ResponseEntity
-                    .badRequest()
-                    .body(new BaseResponse(
-                            new BaseStatusResponse(ApiReturn.BAD_REQUEST.code(), ApiReturn.BAD_REQUEST.description(),
-                                    Collections
-                                            .singletonList(
-                                                    new BaseDetailsResponse("Error ❌",
-                                                            "ไม่สามารถเปลี่ยนสถานะเป็น Inactive ได้")))));
+                user.setLevel(Level.NORMAL.toString());
+                userRepository.save(user);
+                user.setCreateBy(User.builder().id(user.getId()).build());
+                user.setUpdateBy(User.builder().id(user.getId()).build());
+                return user;
         }
-    }
+
+        private void setRoleAndAdditionalInfo(User user, SignUpRequest req) {
+                Set<Role> roles = new HashSet<>();
+                Role role;
+                if (StringUtils.isBlank(req.getLineToken())) {
+                        role = roleRepository.findByName(ERole.ROLE_ADMIN);
+                } else {
+                        role = roleRepository.findByName(ERole.ROLE_USER);
+                        JWTClaimsSet claimsSet = jwtUtils.decodeES256Jwt(req.getLineToken());
+                        String name = claimsSet.getClaim(Key.name.toString()).toString();
+                        String imageUrl = claimsSet.getClaim(Key.picture.toString()).toString();
+                        user.setLineId(claimsSet.getSubject());
+                        user.setLineSubId(Encryption.encodedData(req.getPassword()));
+                        user.setLineName(name);
+                        user.setPictureUrl(imageUrl);
+                }
+                roles.add(role);
+                user.setRoles(roles);
+        }
+
+        @PostMapping("/setInactive")
+        public ResponseEntity<BaseResponse> setInactive() {
+                try {
+                        // ดึงข้อมูลผู้ใช้ทั้งหมดจากฐานข้อมูล
+                        List<User> users = userRepository.findAllUserWithLine();
+
+                        // วนลูปผู้ใช้แต่ละคนเพื่อเปลี่ยนค่า statusFlag เป็น "Inactive"
+                        for (User user : users) {
+                                user.setStatusFlag(StatusFlag.INACTIVE.code());
+                        }
+
+                        // บันทึกการเปลี่ยนแปลงลงในฐานข้อมูล
+                        userRepository.saveAll(users);
+
+                        // ส่งคำตอบกลับว่าการดำเนินการเสร็จสิ้น
+                        return ResponseEntity.ok(new BaseResponse(
+                                        new BaseStatusResponse(ApiReturn.SUCCESS.code(),
+                                                        ApiReturn.SUCCESS.description(),
+                                                        Collections.singletonList(
+                                                                        new BaseDetailsResponse("Success ✅",
+                                                                                        "เปลี่ยนสถานะเป็น Inactive สำเร็จ")))));
+                } catch (Exception e) {
+                        // หากเกิดข้อผิดพลาด ส่งคำตอบกลับว่าไม่สามารถดำเนินการได้
+                        return ResponseEntity
+                                        .badRequest()
+                                        .body(new BaseResponse(
+                                                        new BaseStatusResponse(ApiReturn.BAD_REQUEST.code(),
+                                                                        ApiReturn.BAD_REQUEST.description(),
+                                                                        Collections
+                                                                                        .singletonList(
+                                                                                                        new BaseDetailsResponse(
+                                                                                                                        "Error ❌",
+                                                                                                                        "ไม่สามารถเปลี่ยนสถานะเป็น Inactive ได้")))));
+                }
+        }
 
 }
