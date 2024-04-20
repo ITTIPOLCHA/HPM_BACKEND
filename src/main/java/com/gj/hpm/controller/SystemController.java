@@ -137,7 +137,7 @@ public class SystemController {
                         userRepository.save(user);
 
                         Boolean lineUtil = new LineUtil().changeRichmenu(user.getLineId(),
-                                        "richmenu-5b0061f18d8f11791f387a0062a77fde", token);
+                                        "richmenu-199151260dddf9df54f66768a8a02f68", token);
 
                         if (!lineUtil)
                                 return ResponseEntity

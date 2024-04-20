@@ -15,9 +15,7 @@ public class PasswordImpl implements
   @Override
   public boolean isValid(String Password,
       ConstraintValidatorContext cxt) {
-    return Password.matches(
-        "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[!#$%&'*+,-./:;<=>?@^_`{|}~])[A-Za-z\\d!#$%&'*+,-./:;<=>?@^_`{|}~]{8,}$")
-        && (Password.length() > 8) && (Password.length() <= 14);
+    return (Password.length() > 8) && (Password.length() <= 14);
   }
 
 }
