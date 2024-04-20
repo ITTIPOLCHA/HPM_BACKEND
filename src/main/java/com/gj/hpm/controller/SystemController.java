@@ -3,20 +3,14 @@ package com.gj.hpm.controller;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -31,9 +25,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.client.RestTemplate;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.gj.hpm.config.security.jwt.JwtUtils;
 import com.gj.hpm.config.security.services.UserDetailsImpl;
 import com.gj.hpm.dto.request.SignInRequest;
@@ -53,6 +45,7 @@ import com.gj.hpm.util.Constant.Level;
 import com.gj.hpm.util.Constant.StatusFlag;
 import com.gj.hpm.util.Constant.TypeSignIn;
 import com.gj.hpm.util.Encryption;
+import com.gj.hpm.util.LineUtil;
 import com.nimbusds.jwt.JWTClaimsSet;
 
 import io.micrometer.common.util.StringUtils;
@@ -143,30 +136,35 @@ public class SystemController {
                         setRoleAndAdditionalInfo(user, req);
                         userRepository.save(user);
 
-                        RestTemplate restTemplate = new RestTemplate();
-                        String apiUrl = "https://api.line.me/v2/bot/user/" + user.getLineId()
-                                        + "/richmenu/richmenu-5b0061f18d8f11791f387a0062a77fde";
-                        HttpHeaders headers = new HttpHeaders();
-                        headers.setContentType(MediaType.APPLICATION_JSON);
-                        headers.set("Authorization", "Bearer " + token);
-                        String requestBody = "{}";
-                        restTemplate.exchange(apiUrl, HttpMethod.POST, new HttpEntity<>(requestBody, headers),
-                                        String.class);
+                        Boolean lineUtil = new LineUtil().changeRichmenu(user.getLineId(),
+                                        "richmenu-5b0061f18d8f11791f387a0062a77fde", token);
 
-                        apiUrl = "https://api.line.me/v2/bot/message/push";
-                        ObjectMapper objectMapper = new ObjectMapper();
-                        Map<String, Object> requestBodyLine = new HashMap<>();
-                        Map<String, Object> message = new HashMap<>();
-                        message.put("type", "text");
-                        message.put("text", "ระบบได้บันทึกข้อมูลของท่านแล้ว กรุณาเข้าสู่ระบบ");
-                        List<Map<String, Object>> messages = new ArrayList<>();
-                        messages.add(message);
-                        requestBodyLine.put("messages", messages);
-                        requestBodyLine.put("to", user.getLineId());
-                        String jsonBody = objectMapper.writeValueAsString(requestBodyLine);
-                        HttpEntity<String> requestEntity = new HttpEntity<>(jsonBody, headers);
-                        restTemplate.exchange(apiUrl, HttpMethod.POST, requestEntity,
-                                        String.class);
+                        if (!lineUtil)
+                                return ResponseEntity
+                                                .badRequest()
+                                                .body(new BaseResponse(
+                                                                new BaseStatusResponse(ApiReturn.BAD_REQUEST.code(),
+                                                                                ApiReturn.BAD_REQUEST.description(),
+                                                                                Collections
+                                                                                                .singletonList(
+                                                                                                                new BaseDetailsResponse(
+                                                                                                                                "Error ❌",
+                                                                                                                                "เปลี่ยน Rich menu ไม่ได้.")))));
+                        lineUtil = new LineUtil().sentMessage(user.getLineId(),
+                                        token, "ระบบได้บันทึกข้อมูลของท่านแล้ว กรุณาเข้าสู่ระบบ");
+
+                        if (!lineUtil) {
+                                return ResponseEntity
+                                                .badRequest()
+                                                .body(new BaseResponse(
+                                                                new BaseStatusResponse(ApiReturn.BAD_REQUEST.code(),
+                                                                                ApiReturn.BAD_REQUEST.description(),
+                                                                                Collections
+                                                                                                .singletonList(
+                                                                                                                new BaseDetailsResponse(
+                                                                                                                                "Error ❌",
+                                                                                                                                "ส่งข้อความไม่สำเร็จ.")))));
+                        }
 
                         return ResponseEntity.ok(new BaseResponse(
                                         new BaseStatusResponse(ApiReturn.SUCCESS.code(),
