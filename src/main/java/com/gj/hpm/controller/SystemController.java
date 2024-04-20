@@ -152,7 +152,7 @@ public class SystemController {
             Map<String, Object> requestBodyLine = new HashMap<>();
             Map<String, Object> message = new HashMap<>();
             message.put("type", "text");
-            message.put("text", "ระบบได้บันทึกข้อมูลของท่านแล้ว กรุนาเข้าสู่ระบบ");
+            message.put("text", "ระบบได้บันทึกข้อมูลของท่านแล้ว กรุณาเข้าสู่ระบบ");
             List<Map<String, Object>> messages = new ArrayList<>();
             messages.add(message);
             requestBodyLine.put("messages", messages);
