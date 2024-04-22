@@ -85,14 +85,27 @@ public class SystemController {
         @PostMapping("/signIn")
         public ResponseEntity<?> signIn(@Valid @RequestBody SignInRequest req) {
                 try {
-                        if (TypeSignIn.line.toString().equals(req.getType())) {
-                                JWTClaimsSet claimsSet = jwtUtils.decodeES256Jwt(req.getLineToken());
-                                String lineId = claimsSet.getSubject();
-                                User user = userRepository.findByLineId(lineId)
-                                                .orElseThrow(() -> new UsernameNotFoundException(
-                                                                "User not found with Line ID: " + lineId));
-                                req.setEmail(user.getEmail());
-                                req.setPassword(Encryption.decodedData(user.getLineSubId()));
+                        JWTClaimsSet claimsSet = null;
+                        String lineId = null;
+                        if (StringUtils.isNotBlank(req.getLineToken())) {
+                                claimsSet = jwtUtils.decodeES256Jwt(req.getLineToken());
+                                lineId = claimsSet.getSubject();
+                                if (TypeSignIn.line.toString().equals(req.getType())) {
+                                        User user = userRepository.findByLineId(lineId)
+                                                        .orElseThrow(() -> new UsernameNotFoundException(
+                                                                        "User not found with Line"));
+                                        req.setEmail(user.getEmail());
+                                        req.setPassword(Encryption.decodedData(user.getLineSubId()));
+                                } else {
+                                        User user = userRepository.findByEmail(req.getEmail())
+                                                        .orElseThrow(() -> new UsernameNotFoundException(
+                                                                        "User not found with email: "
+                                                                                        + req.getEmail()));
+                                        user.setLineId(lineId);
+                                        user.setLineName(claimsSet.getClaim(Key.name.toString()).toString());
+                                        user.setPictureUrl(claimsSet.getClaim(Key.picture.toString()).toString());
+                                        userRepository.save(user);
+                                }
                         }
                         Authentication authentication = authenticationManager.authenticate(
                                         new UsernamePasswordAuthenticationToken(req.getEmail(), req.getPassword()));
@@ -124,7 +137,19 @@ public class SystemController {
         @PostMapping("/signUp")
         public ResponseEntity<BaseResponse> signUp(@Valid @RequestBody SignUpRequest req) {
                 try {
-                        List<BaseDetailsResponse> details = validateSignUpRequest(req);
+                        User user = new User();
+                        Set<Role> roles = new HashSet<>();
+                        Role role;
+                        String lineId = null;
+                        String name = null;
+                        String imageUrl = null;
+                        if (StringUtils.isNotBlank(req.getLineToken())) {
+                                JWTClaimsSet claimsSet = jwtUtils.decodeES256Jwt(req.getLineToken());
+                                lineId = claimsSet.getSubject();
+                                name = claimsSet.getClaim(Key.name.toString()).toString();
+                                imageUrl = claimsSet.getClaim(Key.picture.toString()).toString();
+                        }
+                        List<BaseDetailsResponse> details = validateSignUpRequest(req, lineId);
                         if (!details.isEmpty())
                                 return ResponseEntity
                                                 .badRequest()
@@ -132,14 +157,32 @@ public class SystemController {
                                                                 new BaseStatusResponse(ApiReturn.BAD_REQUEST.code(),
                                                                                 ApiReturn.BAD_REQUEST.description(),
                                                                                 details)));
-                        User user = createUserFromSignUpRequest(req);
-                        setRoleAndAdditionalInfo(user, req);
+                        BeanUtils.copyProperties(req, user);
+                        if (StringUtils.isBlank(req.getLineToken())) {
+                                role = roleRepository.findByName(ERole.ROLE_ADMIN);
+                        } else {
+                                role = roleRepository.findByName(ERole.ROLE_USER);
+                                user.setLineId(lineId);
+                                user.setLineSubId(Encryption.encodedData(req.getPassword()));
+                                user.setLineName(name);
+                                user.setPictureUrl(imageUrl);
+                                user.setStatusFlag(StatusFlag.INACTIVE.code());
+                                user.setLevel(Level.NORMAL.toString());
+                                user.setCheckState(false);
+                        }
+                        roles.add(role);
+                        user.setRoles(roles);
+                        user.setUsername(req.getEmail());
+                        user.setPassword(encoder.encode(req.getPassword()));
+                        user.setCreateDate(LocalDateTime.now());
+                        user.setUpdateDate(LocalDateTime.now());
+                        userRepository.save(user);
+                        user.setCreateBy(User.builder().id(user.getId()).build());
+                        user.setUpdateBy(User.builder().id(user.getId()).build());
                         userRepository.save(user);
 
-                        Boolean lineUtil = new LineUtil().changeRichmenu(user.getLineId(),
-                                        "richmenu-199151260dddf9df54f66768a8a02f68", token);
-
-                        if (!lineUtil)
+                        if (!new LineUtil().changeRichmenu(user.getLineId(),
+                                        "richmenu-199151260dddf9df54f66768a8a02f68", token))
                                 return ResponseEntity
                                                 .badRequest()
                                                 .body(new BaseResponse(
@@ -150,10 +193,8 @@ public class SystemController {
                                                                                                                 new BaseDetailsResponse(
                                                                                                                                 "Error ❌",
                                                                                                                                 "เปลี่ยน Rich menu ไม่ได้.")))));
-                        lineUtil = new LineUtil().sentMessage(user.getLineId(),
-                                        token, "ระบบได้บันทึกข้อมูลของท่านแล้ว กรุณาเข้าสู่ระบบ");
-
-                        if (!lineUtil) {
+                        if (!new LineUtil().sentMessage(user.getLineId(),
+                                        token, "ระบบได้บันทึกข้อมูลของท่านแล้ว กรุณาเข้าสู่ระบบ"))
                                 return ResponseEntity
                                                 .badRequest()
                                                 .body(new BaseResponse(
@@ -164,7 +205,6 @@ public class SystemController {
                                                                                                                 new BaseDetailsResponse(
                                                                                                                                 "Error ❌",
                                                                                                                                 "ส่งข้อความไม่สำเร็จ.")))));
-                        }
 
                         return ResponseEntity.ok(new BaseResponse(
                                         new BaseStatusResponse(ApiReturn.SUCCESS.code(),
@@ -185,7 +225,7 @@ public class SystemController {
                 }
         }
 
-        private List<BaseDetailsResponse> validateSignUpRequest(SignUpRequest req) {
+        private List<BaseDetailsResponse> validateSignUpRequest(SignUpRequest req, String lineId) {
                 List<BaseDetailsResponse> details = new ArrayList<>();
                 if (userRepository.existsByEmail(req.getEmail()))
                         details.add(new BaseDetailsResponse("email", "อีเมลนี้ถูกใช้งานแล้ว"));
@@ -193,59 +233,24 @@ public class SystemController {
                         details.add(new BaseDetailsResponse("phone", "เบอร์นี้ถูกใช้งานแล้ว"));
                 if (userRepository.existsByHn(req.getHn()))
                         details.add(new BaseDetailsResponse("hn", "หมายเลขผู้ป่วยนี้ถูกใช้งานแล้ว"));
+                if (StringUtils.isNotBlank(lineId) && userRepository.existsByLineId(lineId))
+                        details.add(new BaseDetailsResponse("line", "Line นี้ถูกใช้งานแล้ว"));
                 return details;
-        }
-
-        private User createUserFromSignUpRequest(SignUpRequest req) {
-                User user = new User();
-                BeanUtils.copyProperties(req, user);
-                user.setUsername(req.getEmail());
-                user.setPassword(encoder.encode(req.getPassword()));
-                LocalDateTime now = LocalDateTime.now();
-                user.setCreateDate(now);
-                user.setUpdateDate(now);
-                user.setStatusFlag(StatusFlag.INACTIVE.code());
-                user.setLevel(Level.NORMAL.toString());
-                userRepository.save(user);
-                user.setCreateBy(User.builder().id(user.getId()).build());
-                user.setUpdateBy(User.builder().id(user.getId()).build());
-                return user;
-        }
-
-        private void setRoleAndAdditionalInfo(User user, SignUpRequest req) {
-                Set<Role> roles = new HashSet<>();
-                Role role;
-                if (StringUtils.isBlank(req.getLineToken())) {
-                        role = roleRepository.findByName(ERole.ROLE_ADMIN);
-                } else {
-                        role = roleRepository.findByName(ERole.ROLE_USER);
-                        JWTClaimsSet claimsSet = jwtUtils.decodeES256Jwt(req.getLineToken());
-                        String name = claimsSet.getClaim(Key.name.toString()).toString();
-                        String imageUrl = claimsSet.getClaim(Key.picture.toString()).toString();
-                        user.setLineId(claimsSet.getSubject());
-                        user.setLineSubId(Encryption.encodedData(req.getPassword()));
-                        user.setLineName(name);
-                        user.setPictureUrl(imageUrl);
-                }
-                roles.add(role);
-                user.setRoles(roles);
         }
 
         @PostMapping("/setInactive")
         public ResponseEntity<BaseResponse> setInactive() {
                 try {
-                        // ดึงข้อมูลผู้ใช้ทั้งหมดจากฐานข้อมูล
                         List<User> users = userRepository.findAllUserWithLine();
 
-                        // วนลูปผู้ใช้แต่ละคนเพื่อเปลี่ยนค่า statusFlag เป็น "Inactive"
                         for (User user : users) {
                                 user.setStatusFlag(StatusFlag.INACTIVE.code());
+                                user.setLevel(Level.NORMAL.toString());
+                                user.setCheckState(false);
                         }
 
-                        // บันทึกการเปลี่ยนแปลงลงในฐานข้อมูล
                         userRepository.saveAll(users);
 
-                        // ส่งคำตอบกลับว่าการดำเนินการเสร็จสิ้น
                         return ResponseEntity.ok(new BaseResponse(
                                         new BaseStatusResponse(ApiReturn.SUCCESS.code(),
                                                         ApiReturn.SUCCESS.description(),
@@ -253,7 +258,6 @@ public class SystemController {
                                                                         new BaseDetailsResponse("Success ✅",
                                                                                         "เปลี่ยนสถานะเป็น Inactive สำเร็จ")))));
                 } catch (Exception e) {
-                        // หากเกิดข้อผิดพลาด ส่งคำตอบกลับว่าไม่สามารถดำเนินการได้
                         return ResponseEntity
                                         .badRequest()
                                         .body(new BaseResponse(

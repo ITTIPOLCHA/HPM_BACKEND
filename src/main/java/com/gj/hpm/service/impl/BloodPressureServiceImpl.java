@@ -176,11 +176,11 @@ public class BloodPressureServiceImpl implements BloodPressureService {
         public GetBloodPressurePagingResponse getBloodPressurePagingByUserId(String id,
                         GetBloodPressureByTokenPagingRequest request) {
                 Page<GetBloodPressureDetailPagingResponse> bpPage = findByAggregationFromToken(id, request);
-                GetBloodPressurePagingResponse responseonse = new GetBloodPressurePagingResponse();
-                responseonse.setBps(bpPage.getContent());
-                responseonse.setTotalPages(bpPage.getTotalPages());
-                responseonse.setTotalItems(bpPage.getTotalElements());
-                return responseonse;
+                GetBloodPressurePagingResponse response = new GetBloodPressurePagingResponse();
+                response.setBps(bpPage.getContent());
+                response.setTotalPages(bpPage.getTotalPages());
+                response.setTotalItems(bpPage.getTotalElements());
+                return response;
         }
 
         private Page<GetBloodPressureDetailPagingResponse> findByAggregationFromToken(String id,

@@ -29,6 +29,8 @@ public interface StmUserRepository extends MongoRepository<User, String> {
 
         Boolean existsByHn(String hn);
 
+        Boolean existsByLineId(String lineId);
+
         // mismatch check in sign in
         @Query("{'lineId': ?0}")
         Optional<User> findByLineId(String lineId);

@@ -29,4 +29,6 @@ public interface StpBloodPressureRepository extends MongoRepository<BloodPressur
 
     @Aggregation(pipeline = { "{ $sort: { 'createAt': -1 } }", "{ $limit: 1 }" })
     GetBloodPressureCurrentResponse findByCurrent();
+
+    void deleteByCreateBy_Id(String createById);
 }
