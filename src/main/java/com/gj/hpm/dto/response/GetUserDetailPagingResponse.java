@@ -16,6 +16,8 @@ public class GetUserDetailPagingResponse extends BaseResponse {
     private String lastName;
     private String lineName;
     private String statusFlag;
+    private String level;
+    private boolean checkState;
     private DropdownUserResp updateBy;
     private LocalDateTime updateDate;
 
