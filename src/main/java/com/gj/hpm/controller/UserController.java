@@ -74,7 +74,7 @@ public class UserController {
         }
     }
 
-    @PostMapping("/getUserListByLevel")
+    @PostMapping("/a/getUserListByLevel")
     public ResponseEntity<?> getUserListByLevel(@RequestHeader("Authorization") String token,
             @RequestBody BaseRequest request) {
         try {
@@ -85,7 +85,7 @@ public class UserController {
         }
     }
 
-    @PostMapping("/getUserListByStatusFlag")
+    @PostMapping("/a/getUserListByStatusFlag")
     public ResponseEntity<?> getUserListByStatusFlag(@RequestHeader("Authorization") String token,
             @RequestBody BaseRequest request) {
         try {

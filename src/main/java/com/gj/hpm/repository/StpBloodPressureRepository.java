@@ -27,7 +27,7 @@ public interface StpBloodPressureRepository extends MongoRepository<BloodPressur
 
     boolean existsByIdAndCreateById(String id, String createById);
 
-    @Aggregation(pipeline = { "{ $sort: { 'createAt': -1 } }", "{ $limit: 1 }" })
+    @Aggregation(pipeline = { "{ $sort: { 'createDate': -1 } }", "{ $limit: 1 }" })
     GetBloodPressureCurrentResponse findByCurrent();
 
     void deleteByCreateBy_Id(String createById);
