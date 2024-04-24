@@ -28,6 +28,7 @@ import com.gj.hpm.dto.request.GetUserByIdRequest;
 import com.gj.hpm.dto.request.GetUserPagingRequest;
 import com.gj.hpm.dto.request.UpdateUserByIdRequest;
 import com.gj.hpm.dto.request.UpdateUserByTokenRequest;
+import com.gj.hpm.dto.request.UpdateUserCheckStateRequest;
 import com.gj.hpm.dto.response.BaseDetailsResponse;
 import com.gj.hpm.dto.response.BaseResponse;
 import com.gj.hpm.dto.response.BaseStatusResponse;
@@ -209,6 +210,25 @@ public class UserServiceImpl implements UserService {
                         user.setHn(request.getHn());
                         user.setUpdateBy(User.builder().id(id).build());
                         user.setUpdateDate(LocalDateTime.now());
+                        stmUserRepository.save(user);
+                        return new BaseResponse(new BaseStatusResponse(ApiReturn.SUCCESS.code(),
+                                        ApiReturn.SUCCESS.description(),
+                                        Collections.singletonList(new BaseDetailsResponse("Success ✅",
+                                                        "อัพเดทข้อมูลผู้ใช้สำเร็จ"))));
+                }
+                return new BaseResponse(
+                                new BaseStatusResponse(ApiReturn.BAD_REQUEST.code(),
+                                                ApiReturn.BAD_REQUEST.description(),
+                                                Collections.singletonList(new BaseDetailsResponse("Not Found ❌",
+                                                                "ไม่พบข้อมูลผู้ใช้"))));
+        }
+
+        @Transactional
+        @Override
+        public BaseResponse updateUserCheckState(UpdateUserCheckStateRequest request) {
+                User user = stmUserRepository.findById(request.getPatientId()).orElse(null);
+                if (user != null) {
+                        user.setCheckState(request.isCheckStatus());
                         stmUserRepository.save(user);
                         return new BaseResponse(new BaseStatusResponse(ApiReturn.SUCCESS.code(),
                                         ApiReturn.SUCCESS.description(),

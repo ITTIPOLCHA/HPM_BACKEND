@@ -7,6 +7,7 @@ import com.gj.hpm.dto.request.GetUserByIdRequest;
 import com.gj.hpm.dto.request.GetUserPagingRequest;
 import com.gj.hpm.dto.request.UpdateUserByIdRequest;
 import com.gj.hpm.dto.request.UpdateUserByTokenRequest;
+import com.gj.hpm.dto.request.UpdateUserCheckStateRequest;
 import com.gj.hpm.dto.response.BaseResponse;
 import com.gj.hpm.dto.response.GetUserListByLevelResponse;
 import com.gj.hpm.dto.response.GetUserListByStatusFlagResponse;
@@ -27,6 +28,8 @@ public interface UserService {
     BaseResponse updateUserById(String id, UpdateUserByIdRequest request);
 
     BaseResponse updateUserByToken(String id, UpdateUserByTokenRequest request);
+
+    BaseResponse updateUserCheckState(UpdateUserCheckStateRequest request);
 
     BaseResponse deleteUserById(GetUserByIdRequest request);
 

@@ -17,6 +17,7 @@ import com.gj.hpm.dto.request.GetUserByIdRequest;
 import com.gj.hpm.dto.request.GetUserPagingRequest;
 import com.gj.hpm.dto.request.UpdateUserByIdRequest;
 import com.gj.hpm.dto.request.UpdateUserByTokenRequest;
+import com.gj.hpm.dto.request.UpdateUserCheckStateRequest;
 import com.gj.hpm.dto.response.BaseResponse;
 import com.gj.hpm.dto.response.GetUserListByLevelResponse;
 import com.gj.hpm.dto.response.GetUserListByStatusFlagResponse;
@@ -115,6 +116,17 @@ public class UserController {
             @RequestBody UpdateUserByTokenRequest request) {
         try {
             BaseResponse response = userService.updateUserByToken(jwtUtils.getIdFromHeader(token), request);
+            return ResponseEntity.ok().body(response);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @PostMapping("/a/updateUserCheckState")
+    public ResponseEntity<?> updateUserCheckState(@RequestHeader("Authorization") String token,
+            @RequestBody UpdateUserCheckStateRequest request) {
+        try {
+            BaseResponse response = userService.updateUserCheckState(request);
             return ResponseEntity.ok().body(response);
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());
