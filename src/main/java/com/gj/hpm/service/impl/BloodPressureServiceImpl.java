@@ -120,16 +120,17 @@ public class BloodPressureServiceImpl implements BloodPressureService {
 
         @Transactional
         @Override
-        public GetBloodPressureResponse getBloodPressureByCreateBy(GetBloodPressureCreateByRequest request) {
-                GetBloodPressureResponse response = stpBloodPressureRepository
-                                .findByCreateBy_Id(request.getUserId()).orElse(null);
-                if (response != null)
+        public List<GetBloodPressureResponse> getBloodPressureByCreateBy(GetBloodPressureCreateByRequest request) {
+                List<GetBloodPressureResponse> response = stpBloodPressureRepository
+                                .findByCreateBy_Id(request.getUserId());
+                if (!response.isEmpty())
                         return response;
-                response = new GetBloodPressureResponse();
-                response.setStatus(new BaseStatusResponse(ApiReturn.BAD_REQUEST.code(),
+                GetBloodPressureResponse resp = new GetBloodPressureResponse();
+                resp.setStatus(new BaseStatusResponse(ApiReturn.BAD_REQUEST.code(),
                                 ApiReturn.BAD_REQUEST.description(),
                                 Collections.singletonList(
-                                                new BaseDetailsResponse("Success ✅", "ไม่พบข้อมูลความดันโลหิต"))));
+                                                new BaseDetailsResponse("Not Found ❌", "ไม่พบข้อมูลความดันโลหิต"))));
+                response.add(resp);
                 return response;
         }
 

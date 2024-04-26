@@ -1,6 +1,7 @@
 package com.gj.hpm.repository;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.mongodb.repository.Aggregation;
@@ -22,7 +23,7 @@ public interface StpBloodPressureRepository extends MongoRepository<BloodPressur
     Optional<BloodPressure> findByIdAndCreateBy_Id(String id, String userId);
 
     @Query("{ 'createBy._id': ?0 }")
-    Optional<GetBloodPressureResponse> findByCreateBy_Id(String userId);
+    List<GetBloodPressureResponse> findByCreateBy_Id(String userId);
 
     boolean existsByCreateDateAfterAndCreateById(LocalDateTime createDate, String createById);
 

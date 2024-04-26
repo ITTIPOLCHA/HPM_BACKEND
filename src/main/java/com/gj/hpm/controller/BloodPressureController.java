@@ -1,5 +1,7 @@
 package com.gj.hpm.controller;
 
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
@@ -63,7 +65,7 @@ public class BloodPressureController {
     public ResponseEntity<?> getBloodPressureByCreateBy(@RequestHeader("Authorization") String token,
             @RequestBody GetBloodPressureCreateByRequest request) {
         try {
-            GetBloodPressureResponse response = bloodPressureService.getBloodPressureByCreateBy(request);
+            List<GetBloodPressureResponse> response = bloodPressureService.getBloodPressureByCreateBy(request);
             return ResponseEntity.ok().body(response);
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());

@@ -1,5 +1,7 @@
 package com.gj.hpm.service;
 
+import java.util.List;
+
 import com.gj.hpm.dto.request.CreateBloodPressureRequest;
 import com.gj.hpm.dto.request.DeleteBloodPressureByIdRequest;
 import com.gj.hpm.dto.request.DeleteBloodPressureByTokenRequest;
@@ -18,7 +20,7 @@ public interface BloodPressureService {
 
     GetBloodPressureResponse getBloodPressureById(GetBloodPressureRequest request);
 
-    GetBloodPressureResponse getBloodPressureByCreateBy(GetBloodPressureCreateByRequest request);
+    List<GetBloodPressureResponse> getBloodPressureByCreateBy(GetBloodPressureCreateByRequest request);
 
     GetBloodPressureResponse getBloodPressureByToken(String id, GetBloodPressureRequest request);
 
