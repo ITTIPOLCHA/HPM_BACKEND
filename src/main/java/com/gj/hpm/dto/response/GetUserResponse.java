@@ -24,7 +24,7 @@ public class GetUserResponse extends BaseResponse {
     private LocalDateTime createDate;
     private DropdownUserResp updateBy;
     private LocalDateTime updateDate;
-    private List<DropdownRoleResp> role;
+    private List<DropdownRoleResp> roles;
 
     /**
      * InnerGeneralInformation
