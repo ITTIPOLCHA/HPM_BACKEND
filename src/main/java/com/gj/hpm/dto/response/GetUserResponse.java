@@ -1,6 +1,7 @@
 package com.gj.hpm.dto.response;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -23,7 +24,7 @@ public class GetUserResponse extends BaseResponse {
     private LocalDateTime createDate;
     private DropdownUserResp updateBy;
     private LocalDateTime updateDate;
-    private DropdownRoleResp role;
+    private List<DropdownRoleResp> role;
 
     /**
      * InnerGeneralInformation
