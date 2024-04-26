@@ -13,4 +13,5 @@ public class GetUserListByLevelResponse {
     private String phone;
     private String level;
     private String pictureUrl;
+    private boolean checkState;
 }

@@ -33,7 +33,7 @@ public class User extends BaseEntity {
     private String pictureUrl;
     // status
     private String level; // warning1, warning2, danger, safe
-    private boolean checkState; // active, inactive, delete
+    private boolean checkState;
     @DBRef
     private Set<Role> roles = new HashSet<>();
 
