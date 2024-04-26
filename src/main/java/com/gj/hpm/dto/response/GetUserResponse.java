@@ -17,10 +17,13 @@ public class GetUserResponse extends BaseResponse {
     private String lineName;
     private String pictureUrl;
     private String statusFlag;
+    private String level;
+    private boolean checkState;
     private DropdownUserResp createBy;
     private LocalDateTime createDate;
     private DropdownUserResp updateBy;
     private LocalDateTime updateDate;
+    private DropdownRoleResp role;
 
     /**
      * InnerGeneralInformation
@@ -31,5 +34,14 @@ public class GetUserResponse extends BaseResponse {
         private String id;
         private String firstName;
         private String lastName;
+    }
+
+    /**
+     * InnerRole
+     */
+    @Setter
+    @Getter
+    public class DropdownRoleResp {
+        private String name;
     }
 }
