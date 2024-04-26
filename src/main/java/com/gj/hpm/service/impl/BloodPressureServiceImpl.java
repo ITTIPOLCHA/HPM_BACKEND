@@ -24,6 +24,7 @@ import com.gj.hpm.dto.request.CreateBloodPressureRequest;
 import com.gj.hpm.dto.request.DeleteBloodPressureByIdRequest;
 import com.gj.hpm.dto.request.DeleteBloodPressureByTokenRequest;
 import com.gj.hpm.dto.request.GetBloodPressureByTokenPagingRequest;
+import com.gj.hpm.dto.request.GetBloodPressureCreateByRequest;
 import com.gj.hpm.dto.request.GetBloodPressurePagingRequest;
 import com.gj.hpm.dto.request.GetBloodPressureRequest;
 import com.gj.hpm.dto.request.UpdateBloodPressureByIdRequest;
@@ -119,6 +120,21 @@ public class BloodPressureServiceImpl implements BloodPressureService {
 
         @Transactional
         @Override
+        public GetBloodPressureResponse getBloodPressureByCreateBy(GetBloodPressureCreateByRequest request) {
+                GetBloodPressureResponse response = stpBloodPressureRepository
+                                .findByCreateBy_Id(request.getUserId()).orElse(null);
+                if (response != null)
+                        return response;
+                response = new GetBloodPressureResponse();
+                response.setStatus(new BaseStatusResponse(ApiReturn.BAD_REQUEST.code(),
+                                ApiReturn.BAD_REQUEST.description(),
+                                Collections.singletonList(
+                                                new BaseDetailsResponse("Success ✅", "ไม่พบข้อมูลความดันโลหิต"))));
+                return response;
+        }
+
+        @Transactional
+        @Override
         public GetBloodPressureResponse getBloodPressureByToken(String id, GetBloodPressureRequest request) {
                 GetBloodPressureResponse response = stpBloodPressureRepository
                                 .findByIdAndCreateById(request.getBloodPressureId(), id).orElse(null);
@@ -128,7 +144,7 @@ public class BloodPressureServiceImpl implements BloodPressureService {
                 response.setStatus(new BaseStatusResponse(ApiReturn.BAD_REQUEST.code(),
                                 ApiReturn.BAD_REQUEST.description(),
                                 Collections.singletonList(
-                                                new BaseDetailsResponse("Not Found ❌", "ไม่พบข้อมูลความดันโลหิต"))));
+                                                new BaseDetailsResponse("Not Found ❌", "พบข้อมูลความดันโลหิต"))));
                 return response;
         }
 

@@ -4,6 +4,7 @@ import com.gj.hpm.dto.request.CreateBloodPressureRequest;
 import com.gj.hpm.dto.request.DeleteBloodPressureByIdRequest;
 import com.gj.hpm.dto.request.DeleteBloodPressureByTokenRequest;
 import com.gj.hpm.dto.request.GetBloodPressureByTokenPagingRequest;
+import com.gj.hpm.dto.request.GetBloodPressureCreateByRequest;
 import com.gj.hpm.dto.request.GetBloodPressurePagingRequest;
 import com.gj.hpm.dto.request.GetBloodPressureRequest;
 import com.gj.hpm.dto.request.UpdateBloodPressureByIdRequest;
@@ -16,6 +17,8 @@ public interface BloodPressureService {
     BaseResponse createBloodPressure(String id, CreateBloodPressureRequest request);
 
     GetBloodPressureResponse getBloodPressureById(GetBloodPressureRequest request);
+
+    GetBloodPressureResponse getBloodPressureByCreateBy(GetBloodPressureCreateByRequest request);
 
     GetBloodPressureResponse getBloodPressureByToken(String id, GetBloodPressureRequest request);
 

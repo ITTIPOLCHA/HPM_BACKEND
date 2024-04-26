@@ -14,6 +14,7 @@ import com.gj.hpm.dto.request.CreateBloodPressureRequest;
 import com.gj.hpm.dto.request.DeleteBloodPressureByIdRequest;
 import com.gj.hpm.dto.request.DeleteBloodPressureByTokenRequest;
 import com.gj.hpm.dto.request.GetBloodPressureByTokenPagingRequest;
+import com.gj.hpm.dto.request.GetBloodPressureCreateByRequest;
 import com.gj.hpm.dto.request.GetBloodPressurePagingRequest;
 import com.gj.hpm.dto.request.GetBloodPressureRequest;
 import com.gj.hpm.dto.request.UpdateBloodPressureByIdRequest;
@@ -52,6 +53,17 @@ public class BloodPressureController {
             @RequestBody GetBloodPressureRequest request) {
         try {
             GetBloodPressureResponse response = bloodPressureService.getBloodPressureById(request);
+            return ResponseEntity.ok().body(response);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @PostMapping("/a/getBloodPressureByCreateBy")
+    public ResponseEntity<?> getBloodPressureByCreateBy(@RequestHeader("Authorization") String token,
+            @RequestBody GetBloodPressureCreateByRequest request) {
+        try {
+            GetBloodPressureResponse response = bloodPressureService.getBloodPressureByCreateBy(request);
             return ResponseEntity.ok().body(response);
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());

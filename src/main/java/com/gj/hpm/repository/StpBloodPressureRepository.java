@@ -21,6 +21,9 @@ public interface StpBloodPressureRepository extends MongoRepository<BloodPressur
     @Query("{ '_id': ?0, 'createBy._id': ?1}")
     Optional<BloodPressure> findByIdAndCreateBy_Id(String id, String userId);
 
+    @Query("{ 'createBy._id': ?0 }")
+    Optional<GetBloodPressureResponse> findByCreateBy_Id(String userId);
+
     boolean existsByCreateDateAfterAndCreateById(LocalDateTime createDate, String createById);
 
     boolean existsById(String id);
