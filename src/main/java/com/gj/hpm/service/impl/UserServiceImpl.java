@@ -123,7 +123,8 @@ public class UserServiceImpl implements UserService {
                 addCriteriaIfNotEmpty(criteria, "email", request.getEmail());
                 addCriteriaIfNotEmpty(criteria, "phone", request.getPhone());
                 addCriteriaIfNotEmpty(criteria, "hn", request.getHn());
-                addCriteriaIfNotEmpty(criteria, "statusFlag", request.getStatusFlag());
+                if (StringUtils.isNotEmpty(request.getStatusFlag()))
+                        criteria.and("statusFlag").is(request.getStatusFlag());
                 addCriteriaIfNotEmpty(criteria, "level", request.getLevel());
                 return criteria;
         }
