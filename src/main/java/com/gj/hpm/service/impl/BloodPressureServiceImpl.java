@@ -139,7 +139,6 @@ public class BloodPressureServiceImpl implements BloodPressureService {
         public List<GetBloodPressureResponse> getBloodPressureByCreateBy(GetBloodPressureCreateByRequest request) {
                 List<GetBloodPressureResponse> response = stpBloodPressureRepository
                                 .findByCreateBy_Id(request.getUserId());
-                response.sort(Comparator.comparing(GetBloodPressureResponse::getUpdateDate).reversed());
                 if (!response.isEmpty())
                         return response;
                 GetBloodPressureResponse resp = new GetBloodPressureResponse();
