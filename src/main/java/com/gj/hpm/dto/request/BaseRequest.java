@@ -12,4 +12,5 @@ import lombok.Setter;
 @Validated
 public class BaseRequest implements Serializable {
 	private String requestId;
+	private String actionId;
 }

@@ -19,6 +19,7 @@ import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.gj.hpm.dto.request.CreateBloodPressureRequest;
 import com.gj.hpm.dto.request.DeleteBloodPressureByIdRequest;
@@ -43,6 +44,7 @@ import com.gj.hpm.service.BloodPressureService;
 import com.gj.hpm.util.Constant.ApiReturn;
 import com.gj.hpm.util.Constant.Level;
 import com.gj.hpm.util.Constant.StatusFlag;
+import com.gj.hpm.util.ImageController;
 import com.gj.hpm.util.MongoUtil;
 
 @Service
@@ -53,6 +55,8 @@ public class BloodPressureServiceImpl implements BloodPressureService {
         private StmUserRepository stmUserRepository;
         @Autowired
         private MongoTemplate mongoTemplate;
+        @Autowired
+        private ImageController imageController;
 
         @Transactional
         @Override
@@ -101,6 +105,17 @@ public class BloodPressureServiceImpl implements BloodPressureService {
                                 Collections.singletonList(
                                                 new BaseDetailsResponse("Fail ❌",
                                                                 "ข้อมูลความดันโลหิตถูกบันทึกไปแล้ว ใน 1 ชั่วโมงนี้"))));
+        }
+
+        @Transactional
+        @Override
+        public BaseResponse getBloodPressureFromImage(MultipartFile image) {
+                String fileName = imageController.processImage(image);
+                BaseResponse response = new BaseResponse();
+                response.setStatus(new BaseStatusResponse(ApiReturn.SUCCESS.code(), ApiReturn.SUCCESS.description(),
+                                Collections.singletonList(new BaseDetailsResponse("Success ✅",
+                                                fileName))));
+                return response;
         }
 
         @Transactional
@@ -243,7 +258,7 @@ public class BloodPressureServiceImpl implements BloodPressureService {
                         bloodPressure.setDia(request.getDia());
                         bloodPressure.setPul(request.getPul());
                         bloodPressure.setCreateBy(User.builder().id(request.getUserId()).build());
-                        bloodPressure.setUpdateBy(User.builder().id(request.getUserId()).build());
+                        bloodPressure.setUpdateBy(User.builder().id(request.getActionId()).build());
                         bloodPressure.setUpdateDate(LocalDateTime.now());
                         stpBloodPressureRepository.save(bloodPressure);
                         return new BaseResponse(
