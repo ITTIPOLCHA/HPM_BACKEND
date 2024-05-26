@@ -2,6 +2,7 @@ package com.gj.hpm.service.impl;
 
 import java.time.LocalDateTime;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 
 import org.apache.commons.lang3.StringUtils;
@@ -138,6 +139,7 @@ public class BloodPressureServiceImpl implements BloodPressureService {
         public List<GetBloodPressureResponse> getBloodPressureByCreateBy(GetBloodPressureCreateByRequest request) {
                 List<GetBloodPressureResponse> response = stpBloodPressureRepository
                                 .findByCreateBy_Id(request.getUserId());
+                response.sort(Comparator.comparing(GetBloodPressureResponse::getUpdateDate).reversed());
                 if (!response.isEmpty())
                         return response;
                 GetBloodPressureResponse resp = new GetBloodPressureResponse();
