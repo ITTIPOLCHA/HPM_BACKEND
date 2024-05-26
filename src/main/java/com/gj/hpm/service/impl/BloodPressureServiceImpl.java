@@ -198,8 +198,8 @@ public class BloodPressureServiceImpl implements BloodPressureService {
                 addCriteriaIfNotEmpty(criteria, "dia", request.getDia());
                 addCriteriaIfNotEmpty(criteria, "pul", request.getPul());
                 addCriteriaIfNotEmpty(criteria, "statusFlag", request.getStatusFlag());
-                if (StringUtils.isNotEmpty(request.getUpdateBy()))
-                        criteria.and("createBy.$id").is(new ObjectId(request.getUpdateBy()));
+                if (StringUtils.isNotEmpty(request.getCreateBy()))
+                        criteria.and("createBy.$id").is(new ObjectId(request.getCreateBy()));
                 return criteria;
         }
 

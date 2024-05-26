@@ -12,6 +12,6 @@ public class GetBloodPressurePagingRequest extends BasePaginationRequest {
     private String sys;
     private String dia;
     private String pul;
-    private String updateBy;
+    private String createBy;
     private String statusFlag;
 }
