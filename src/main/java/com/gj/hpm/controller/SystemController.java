@@ -23,11 +23,14 @@ import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.gj.hpm.config.security.jwt.JwtUtils;
 import com.gj.hpm.config.security.services.UserDetailsImpl;
+import com.gj.hpm.dto.request.PasswordChangeRequest;
+import com.gj.hpm.dto.request.PasswordForgotRequest;
 import com.gj.hpm.dto.request.SignInRequest;
 import com.gj.hpm.dto.request.SignUpRequest;
 import com.gj.hpm.dto.response.BaseDetailsResponse;
@@ -39,6 +42,7 @@ import com.gj.hpm.entity.Role;
 import com.gj.hpm.entity.User;
 import com.gj.hpm.repository.StmRoleRepository;
 import com.gj.hpm.repository.StmUserRepository;
+import com.gj.hpm.service.UserService;
 import com.gj.hpm.util.Constant.ApiReturn;
 import com.gj.hpm.util.Constant.Key;
 import com.gj.hpm.util.Constant.Level;
@@ -73,6 +77,9 @@ public class SystemController {
 
         @Autowired
         JwtUtils jwtUtils;
+
+        @Autowired
+        private UserService userService;
 
         @GetMapping("/ping")
         public ResponseEntity<?> getMethodName() {
@@ -268,6 +275,28 @@ public class SystemController {
                                                                                                         new BaseDetailsResponse(
                                                                                                                         "Error ❌",
                                                                                                                         "ไม่สามารถเปลี่ยนสถานะเป็น Inactive ได้")))));
+                }
+        }
+
+        @PostMapping("/changePassword")
+        public ResponseEntity<?> changePassword(@RequestHeader("Authorization") String token,
+                        @RequestBody PasswordChangeRequest request) {
+                try {
+                        BaseResponse response = userService.changePassword(jwtUtils.getIdFromHeader(token),
+                                        request);
+                        return ResponseEntity.ok().body(response);
+                } catch (Exception e) {
+                        return ResponseEntity.badRequest().body(e.getMessage());
+                }
+        }
+
+        @PostMapping("/forgotPassword")
+        public ResponseEntity<?> forgotPassword(@RequestBody PasswordForgotRequest request) {
+                try {
+                        BaseResponse response = userService.forgotPassword(request);
+                        return ResponseEntity.ok().body(response);
+                } catch (Exception e) {
+                        return ResponseEntity.badRequest().body(e.getMessage());
                 }
         }
 

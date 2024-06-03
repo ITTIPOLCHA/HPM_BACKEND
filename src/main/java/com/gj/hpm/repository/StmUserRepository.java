@@ -15,6 +15,9 @@ public interface StmUserRepository extends MongoRepository<User, String> {
         @Query("{'email': ?0}")
         Optional<User> findByEmail(String email);
 
+        @Query("{'email': ?0, 'phone': ?1 }")
+        Optional<User> findByEmailAndPhone(String email, String phone);
+
         @Query("{'_id': ?0}")
         Optional<GetUserResponse> findGetUserByIdRespByUser_id(String userId);
 

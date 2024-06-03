@@ -20,12 +20,15 @@ import org.springframework.data.mongodb.core.aggregation.ConditionalOperators.Sw
 import org.springframework.data.mongodb.core.aggregation.TypedAggregation;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.gj.hpm.dto.request.BaseRequest;
 import com.gj.hpm.dto.request.GetUserByIdRequest;
 import com.gj.hpm.dto.request.GetUserPagingRequest;
+import com.gj.hpm.dto.request.PasswordChangeRequest;
+import com.gj.hpm.dto.request.PasswordForgotRequest;
 import com.gj.hpm.dto.request.UpdateUserByIdRequest;
 import com.gj.hpm.dto.request.UpdateUserByTokenRequest;
 import com.gj.hpm.dto.request.UpdateUserCheckStateRequest;
@@ -46,6 +49,7 @@ import com.gj.hpm.util.Constant.StatusFlag;
 import com.gj.hpm.util.MongoUtil;
 
 @Service
+@Transactional
 public class UserServiceImpl implements UserService {
 
         @Autowired
@@ -57,7 +61,9 @@ public class UserServiceImpl implements UserService {
         @Autowired
         MongoTemplate mongoTemplate;
 
-        @Transactional
+        @Autowired
+        PasswordEncoder encoder;
+
         @Override
         public GetUserResponse getUserById(GetUserByIdRequest request) {
                 GetUserResponse response = stmUserRepository.findGetUserByIdRespByUser_id(request.getUserId())
@@ -72,7 +78,6 @@ public class UserServiceImpl implements UserService {
                 return response;
         }
 
-        @Transactional
         @Override
         public GetUserResponse getUserByToken(String email) {
                 GetUserResponse response = stmUserRepository.findGetUserByTokenRespByEmail(email).orElse(null);
@@ -87,7 +92,6 @@ public class UserServiceImpl implements UserService {
         }
 
         // ! ==============================
-        @Transactional
         @Override
         public GetUserPagingResponse getUserPaging(GetUserPagingRequest request) {
                 Page<GetUserDetailPagingResponse> userPage = findByAggregation(request);
@@ -135,7 +139,6 @@ public class UserServiceImpl implements UserService {
         }
         // ! ==============================
 
-        @Transactional
         @Override
         public List<GetUserListByLevelResponse> getUserListByLevel() {
                 CaseOperator[] conditions = new CaseOperator[] {
@@ -160,7 +163,6 @@ public class UserServiceImpl implements UserService {
                                 GetUserListByLevelResponse.class).getMappedResults();
         }
 
-        @Transactional
         @Override
         public List<GetUserListByStatusFlagResponse> getUserListByStatusFlag() {
                 TypedAggregation<User> aggregation = Aggregation.newAggregation(User.class,
@@ -172,7 +174,6 @@ public class UserServiceImpl implements UserService {
                                 GetUserListByStatusFlagResponse.class).getMappedResults();
         }
 
-        @Transactional
         @Override
         public BaseResponse updateUserById(String id, UpdateUserByIdRequest request) {
                 User user = stmUserRepository.findById(request.getUserId()).orElse(null);
@@ -198,7 +199,6 @@ public class UserServiceImpl implements UserService {
                                                                 "ไม่พบข้อมูลผู้ใช้"))));
         }
 
-        @Transactional
         @Override
         public BaseResponse updateUserByToken(String id, UpdateUserByTokenRequest request) {
                 User user = stmUserRepository.findById(id).orElse(null);
@@ -224,7 +224,6 @@ public class UserServiceImpl implements UserService {
                                                                 "ไม่พบข้อมูลผู้ใช้"))));
         }
 
-        @Transactional
         @Override
         public BaseResponse updateUserCheckState(UpdateUserCheckStateRequest request) {
                 User user = stmUserRepository.findById(request.getPatientId()).orElse(null);
@@ -243,7 +242,6 @@ public class UserServiceImpl implements UserService {
                                                                 "ไม่พบข้อมูลผู้ใช้"))));
         }
 
-        @Transactional
         @Override
         public BaseResponse deleteUserById(GetUserByIdRequest request) {
                 boolean verify = stmUserRepository.existsById(request.getUserId());
@@ -262,7 +260,6 @@ public class UserServiceImpl implements UserService {
                                                                 "ไม่พบข้อมูลผู้ใช้"))));
         }
 
-        @Transactional
         @Override
         public BaseResponse deleteUserByToken(String id, BaseRequest request) {
                 boolean verify = stmUserRepository.existsById(id);
@@ -278,6 +275,61 @@ public class UserServiceImpl implements UserService {
                                                 ApiReturn.BAD_REQUEST.description(),
                                                 Collections.singletonList(new BaseDetailsResponse("Not Found ❌",
                                                                 "ไม่พบข้อมูลผู้ใช้"))));
+        }
+
+        @Override
+        public BaseResponse changePassword(String id, PasswordChangeRequest request) {
+
+                User user = stmUserRepository.findById(id).orElse(null);
+
+                if (user != null) {
+                        if (encoder.matches(request.getOldPassword(), user.getPassword())) {
+                                user.setPassword(encoder.encode(request.getNewPassword()));
+                                user.setUpdateDate(LocalDateTime.now());
+                                stmUserRepository.save(user);
+                                return new BaseResponse(new BaseStatusResponse(ApiReturn.SUCCESS.code(),
+                                                ApiReturn.SUCCESS.description(),
+                                                Collections.singletonList(
+                                                                new BaseDetailsResponse("Success ✅",
+                                                                                "เปลี่ยนรหัสผ่านสำเร็จ"))));
+                        } else {
+                                return new BaseResponse(
+                                                new BaseStatusResponse(ApiReturn.BAD_REQUEST.code(),
+                                                                ApiReturn.BAD_REQUEST.description(),
+                                                                Collections.singletonList(new BaseDetailsResponse(
+                                                                                "Bad Request ❌",
+                                                                                "รหัสผ่านไม่ตรงกับรหัสเก่า"))));
+                        }
+                } else {
+                        return new BaseResponse(
+                                        new BaseStatusResponse(ApiReturn.BAD_REQUEST.code(),
+                                                        ApiReturn.BAD_REQUEST.description(),
+                                                        Collections.singletonList(new BaseDetailsResponse("Not Found ❌",
+                                                                        "ไม่พบข้อมูลผู้ใช้"))));
+                }
+        }
+
+        @Override
+        public BaseResponse forgotPassword(PasswordForgotRequest request) {
+
+                User user = stmUserRepository.findByEmailAndPhone(request.getEmail(), request.getPhone()).orElse(null);
+
+                if (user != null) {
+                        user.setPassword(encoder.encode(request.getNewPassword()));
+                        user.setUpdateDate(LocalDateTime.now());
+                        stmUserRepository.save(user);
+                        return new BaseResponse(new BaseStatusResponse(ApiReturn.SUCCESS.code(),
+                                        ApiReturn.SUCCESS.description(),
+                                        Collections.singletonList(
+                                                        new BaseDetailsResponse("Success ✅",
+                                                                        "เปลี่ยนรหัสผ่านสำเร็จ"))));
+                } else {
+                        return new BaseResponse(
+                                        new BaseStatusResponse(ApiReturn.BAD_REQUEST.code(),
+                                                        ApiReturn.BAD_REQUEST.description(),
+                                                        Collections.singletonList(new BaseDetailsResponse("Not Found ❌",
+                                                                        "ไม่พบข้อมูลผู้ใช้"))));
+                }
         }
 
 }

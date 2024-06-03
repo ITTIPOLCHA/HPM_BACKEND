@@ -5,6 +5,8 @@ import java.util.List;
 import com.gj.hpm.dto.request.BaseRequest;
 import com.gj.hpm.dto.request.GetUserByIdRequest;
 import com.gj.hpm.dto.request.GetUserPagingRequest;
+import com.gj.hpm.dto.request.PasswordChangeRequest;
+import com.gj.hpm.dto.request.PasswordForgotRequest;
 import com.gj.hpm.dto.request.UpdateUserByIdRequest;
 import com.gj.hpm.dto.request.UpdateUserByTokenRequest;
 import com.gj.hpm.dto.request.UpdateUserCheckStateRequest;
@@ -34,4 +36,8 @@ public interface UserService {
     BaseResponse deleteUserById(GetUserByIdRequest request);
 
     BaseResponse deleteUserByToken(String id, BaseRequest request);
+
+    BaseResponse changePassword(String id, PasswordChangeRequest request);
+
+    BaseResponse forgotPassword(PasswordForgotRequest request);
 }
