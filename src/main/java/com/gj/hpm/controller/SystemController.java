@@ -176,6 +176,34 @@ public class SystemController {
                                 user.setStatusFlag(StatusFlag.INACTIVE.code());
                                 user.setLevel(Level.NORMAL.toString());
                                 user.setCheckState(false);
+                                if (!new LineUtil().changeRichmenu(user.getLineId(),
+                                                "richmenu-199151260dddf9df54f66768a8a02f68", token))
+                                        return ResponseEntity
+                                                        .badRequest()
+                                                        .body(new BaseResponse(
+                                                                        new BaseStatusResponse(
+                                                                                        ApiReturn.BAD_REQUEST.code(),
+                                                                                        ApiReturn.BAD_REQUEST
+                                                                                                        .description(),
+                                                                                        Collections
+                                                                                                        .singletonList(
+                                                                                                                        new BaseDetailsResponse(
+                                                                                                                                        "Error ❌",
+                                                                                                                                        "เปลี่ยน Rich menu ไม่ได้.")))));
+                                if (!new LineUtil().sentMessage(user.getLineId(),
+                                                token, "ระบบได้บันทึกข้อมูลของท่านแล้ว กรุณาเข้าสู่ระบบ"))
+                                        return ResponseEntity
+                                                        .badRequest()
+                                                        .body(new BaseResponse(
+                                                                        new BaseStatusResponse(
+                                                                                        ApiReturn.BAD_REQUEST.code(),
+                                                                                        ApiReturn.BAD_REQUEST
+                                                                                                        .description(),
+                                                                                        Collections
+                                                                                                        .singletonList(
+                                                                                                                        new BaseDetailsResponse(
+                                                                                                                                        "Error ❌",
+                                                                                                                                        "ส่งข้อความไม่สำเร็จ.")))));
                         }
                         roles.add(role);
                         user.setRoles(roles);
@@ -187,31 +215,6 @@ public class SystemController {
                         user.setCreateBy(User.builder().id(user.getId()).build());
                         user.setUpdateBy(User.builder().id(user.getId()).build());
                         userRepository.save(user);
-
-                        if (!new LineUtil().changeRichmenu(user.getLineId(),
-                                        "richmenu-199151260dddf9df54f66768a8a02f68", token))
-                                return ResponseEntity
-                                                .badRequest()
-                                                .body(new BaseResponse(
-                                                                new BaseStatusResponse(ApiReturn.BAD_REQUEST.code(),
-                                                                                ApiReturn.BAD_REQUEST.description(),
-                                                                                Collections
-                                                                                                .singletonList(
-                                                                                                                new BaseDetailsResponse(
-                                                                                                                                "Error ❌",
-                                                                                                                                "เปลี่ยน Rich menu ไม่ได้.")))));
-                        if (!new LineUtil().sentMessage(user.getLineId(),
-                                        token, "ระบบได้บันทึกข้อมูลของท่านแล้ว กรุณาเข้าสู่ระบบ"))
-                                return ResponseEntity
-                                                .badRequest()
-                                                .body(new BaseResponse(
-                                                                new BaseStatusResponse(ApiReturn.BAD_REQUEST.code(),
-                                                                                ApiReturn.BAD_REQUEST.description(),
-                                                                                Collections
-                                                                                                .singletonList(
-                                                                                                                new BaseDetailsResponse(
-                                                                                                                                "Error ❌",
-                                                                                                                                "ส่งข้อความไม่สำเร็จ.")))));
 
                         return ResponseEntity.ok(new BaseResponse(
                                         new BaseStatusResponse(ApiReturn.SUCCESS.code(),
