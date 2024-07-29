@@ -2,12 +2,12 @@ package com.gj.hpm.service.impl;
 
 import java.time.LocalDateTime;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
 
 import org.apache.commons.lang3.StringUtils;
 import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
@@ -18,6 +18,7 @@ import org.springframework.data.mongodb.core.aggregation.Aggregation;
 import org.springframework.data.mongodb.core.aggregation.AggregationResults;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -46,16 +47,24 @@ import com.gj.hpm.util.Constant.ApiReturn;
 import com.gj.hpm.util.Constant.Level;
 import com.gj.hpm.util.Constant.StatusFlag;
 import com.gj.hpm.util.ImageController;
+import com.gj.hpm.util.LineUtil;
 import com.gj.hpm.util.MongoUtil;
 
 @Service
 public class BloodPressureServiceImpl implements BloodPressureService {
+
+        @Value("${hpm.app.token.property}")
+        private String token;
+
         @Autowired
         private StpBloodPressureRepository stpBloodPressureRepository;
+
         @Autowired
         private StmUserRepository stmUserRepository;
+
         @Autowired
         private MongoTemplate mongoTemplate;
+
         @Autowired
         private ImageController imageController;
 
@@ -80,6 +89,7 @@ public class BloodPressureServiceImpl implements BloodPressureService {
                         bloodPressure.setUpdateBy(User.builder().id(id).build());
                         bloodPressure.setUpdateDate(LocalDateTime.now());
                         stpBloodPressureRepository.save(bloodPressure);
+
                         User user = stmUserRepository.findById(id).orElse(null);
                         user.setStatusFlag(StatusFlag.ACTIVE.code());
                         if (Integer.parseInt(request.getSys()) > 179 || Integer.parseInt(request.getDia()) > 109) {
@@ -95,6 +105,24 @@ public class BloodPressureServiceImpl implements BloodPressureService {
                                 user.setCheckState(true);
                         }
                         stmUserRepository.save(user);
+
+                        if (StringUtils.isNotBlank(user.getLineId())) {
+                                if (!new LineUtil().sentMessage(user.getLineId(),
+                                                token, ("บันทึกผลสำเร็จ ✅ ความดันโลหิตของของคุณ " + user.getFirstName()
+                                                                + " คือ Sys : " + request.getSys() + " Dia : "
+                                                                + request.getDia() + " Pul : " + request.getPul())))
+                                        return new BaseResponse(
+                                                        new BaseStatusResponse(
+                                                                        ApiReturn.BAD_REQUEST.code(),
+                                                                        ApiReturn.BAD_REQUEST
+                                                                                        .description(),
+                                                                        Collections
+                                                                                        .singletonList(
+                                                                                                        new BaseDetailsResponse(
+                                                                                                                        "Error ❌",
+                                                                                                                        "ส่งข้อความไม่สำเร็จ."))));
+                        }
+
                         return new BaseResponse(
                                         new BaseStatusResponse(ApiReturn.SUCCESS.code(),
                                                         ApiReturn.SUCCESS.description(),

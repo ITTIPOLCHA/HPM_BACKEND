@@ -191,7 +191,8 @@ public class SystemController {
                                                                                                                                         "Error ❌",
                                                                                                                                         "เปลี่ยน Rich menu ไม่ได้.")))));
                                 if (!new LineUtil().sentMessage(user.getLineId(),
-                                                token, "ระบบได้บันทึกข้อมูลของท่านแล้ว กรุณาเข้าสู่ระบบ"))
+                                                token, ("ระบบได้บันทึกข้อมูลของ " + req.getFirstName()
+                                                                + " เรียบร้อยแล้ว✅ ท่านสามารถเลือกเมนู “ดูประวัติ” เพื่อดูประวัติการส่งผลวัดความดันโลหิต หรือ เลือกเมนู “ส่งผลวัด” เพื่อส่งผลวัดความดันโลหิตได้เลยครับ")))
                                         return ResponseEntity
                                                         .badRequest()
                                                         .body(new BaseResponse(

@@ -22,14 +22,16 @@ public class UserDetailsImpl implements UserDetails {
 	private String email;
 	private String name;
 	private String password;
+	private String lineId;
 	private Collection<? extends GrantedAuthority> authorities;
 
-	public UserDetailsImpl(String id, String email,String name, String password,
+	public UserDetailsImpl(String id, String email,String name, String password,String lineId,
 			Collection<? extends GrantedAuthority> authorities) {
 		this.id = id;
 		this.email = email;
 		this.name = name;
 		this.password = password;
+		this.lineId = lineId;
 		this.authorities = authorities;
 	}
 
@@ -43,6 +45,7 @@ public class UserDetailsImpl implements UserDetails {
 				user.getEmail(),
 				user.getFirstName() + " " + user.getLastName(),
 				user.getPassword(),
+				user.getLineId(),
 				authorities);
 	}
 
@@ -63,6 +66,10 @@ public class UserDetailsImpl implements UserDetails {
 
 	public String getEmail() {
 		return email;
+	}
+
+	public String getLineId() {
+		return lineId;
 	}
 
 	@Override
