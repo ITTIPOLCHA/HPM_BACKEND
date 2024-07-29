@@ -108,9 +108,12 @@ public class BloodPressureServiceImpl implements BloodPressureService {
 
                         if (StringUtils.isNotBlank(user.getLineId())) {
                                 if (!new LineUtil().sentMessage(user.getLineId(),
-                                                token, ("บันทึกผลสำเร็จ ✅ ความดันโลหิตของของคุณ " + user.getFirstName()
-                                                                + " คือ Sys : " + request.getSys() + " Dia : "
-                                                                + request.getDia() + " Pul : " + request.getPul())))
+                                                token, ("บันทึกผลสำเร็จ ✅\n"
+                                                                + "ความดันโลหิตของของคุณ " + user.getFirstName()
+                                                                + " คือ\n"
+                                                                + "Sys : " + request.getSys() + ",\n"
+                                                                + "Dia : " + request.getDia() + ",\n"
+                                                                + "Pul : " + request.getPul())))
                                         return new BaseResponse(
                                                         new BaseStatusResponse(
                                                                         ApiReturn.BAD_REQUEST.code(),
