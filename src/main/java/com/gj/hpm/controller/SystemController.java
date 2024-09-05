@@ -174,7 +174,7 @@ public class SystemController {
                                 user.setLineName(name);
                                 user.setPictureUrl(imageUrl);
                                 user.setStatusFlag(StatusFlag.INACTIVE.code());
-                                user.setLevel(Level.NORMAL.toString());
+                                user.setLevel(Level.NORMAL);
                                 user.setCheckState(false);
                                 if (!new LineUtil().changeRichmenu(user.getLineId(),
                                                 "richmenu-199151260dddf9df54f66768a8a02f68", token))
@@ -256,7 +256,7 @@ public class SystemController {
 
                         for (User user : users) {
                                 user.setStatusFlag(StatusFlag.INACTIVE.code());
-                                user.setLevel(Level.NORMAL.toString());
+                                user.setLevel(Level.NORMAL);
                                 user.setCheckState(false);
                         }
 

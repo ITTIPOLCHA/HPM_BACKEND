@@ -18,7 +18,6 @@ import org.springframework.data.mongodb.core.aggregation.Aggregation;
 import org.springframework.data.mongodb.core.aggregation.AggregationResults;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -85,23 +84,21 @@ public class BloodPressureServiceImpl implements BloodPressureService {
                         bloodPressure.setPul(request.getPul());
                         bloodPressure.setStatusFlag(StatusFlag.ACTIVE.code());
                         bloodPressure.setCreateBy(User.builder().id(id).build());
-                        bloodPressure.setCreateDate(LocalDateTime.now());
                         bloodPressure.setUpdateBy(User.builder().id(id).build());
-                        bloodPressure.setUpdateDate(LocalDateTime.now());
                         stpBloodPressureRepository.save(bloodPressure);
 
                         User user = stmUserRepository.findById(id).orElse(null);
                         user.setStatusFlag(StatusFlag.ACTIVE.code());
                         if (Integer.parseInt(request.getSys()) > 179 || Integer.parseInt(request.getDia()) > 109) {
-                                user.setLevel(Level.DANGER.toString());
+                                user.setLevel(Level.DANGER);
                         } else if (Integer.parseInt(request.getSys()) > 160
                                         || Integer.parseInt(request.getDia()) > 100) {
-                                user.setLevel(Level.WARNING2.toString());
+                                user.setLevel(Level.WARNING2);
                         } else if (Integer.parseInt(request.getSys()) > 139
                                         || Integer.parseInt(request.getDia()) > 89) {
-                                user.setLevel(Level.WARNING1.toString());
+                                user.setLevel(Level.WARNING1);
                         } else {
-                                user.setLevel(Level.NORMAL.toString());
+                                user.setLevel(Level.NORMAL);
                                 user.setCheckState(true);
                         }
                         stmUserRepository.save(user);
