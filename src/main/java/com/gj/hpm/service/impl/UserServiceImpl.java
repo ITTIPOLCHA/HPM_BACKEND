@@ -75,6 +75,9 @@ import com.gj.hpm.util.MongoUtil;
 import com.gj.hpm.util.ResponseUtil;
 import com.nimbusds.jwt.JWTClaimsSet;
 
+import lombok.extern.log4j.Log4j;
+
+@Log4j
 @Service
 @Transactional
 public class UserServiceImpl implements UserService {
@@ -113,6 +116,7 @@ public class UserServiceImpl implements UserService {
                 if (StringUtils.isNotBlank(request.getLineToken())) {
                         claimsSet = jwtUtils.decodeES256Jwt(request.getLineToken());
                         lineId = claimsSet.getSubject();
+                        log.info("Line id : "+lineId);
                         if (TypeSignIn.line.toString().equals(request.getType())) {
                                 User user = stmUserRepository.findByLineId(lineId)
                                                 .orElseThrow();
