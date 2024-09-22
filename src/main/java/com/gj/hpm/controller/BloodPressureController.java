@@ -174,4 +174,73 @@ public class BloodPressureController {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
+
+    // @PostMapping("/upload")
+    // public ResponseEntity<?> extractBloodPressure(@RequestParam("file")
+    // MultipartFile file) {
+    // try {
+    // // Initialize Tesseract OCR instance
+    // Tesseract tesseract = new Tesseract();
+    // tesseract.setDatapath("/opt/homebrew/Cellar/tesseract"); // Path to tessdata
+    // directory
+    // tesseract.setLanguage("eng");
+
+    // // Get InputStream from MultipartFile without saving to disk
+    // InputStream inputStream = file.getInputStream();
+
+    // // Perform OCR on the image using InputStream
+    // String result = tesseract.doOCR(javax.imageio.ImageIO.read(inputStream));
+
+    // // Extract sys, dia, and pul from OCR result using regex
+    // String sys = extractValue(result, "SYS");
+    // String dia = extractValue(result, "DIA");
+    // String pul = extractValue(result, "PUL");
+
+    // // Return extracted values
+    // return ResponseEntity.ok(new BloodPressureData(sys, dia, pul));
+
+    // } catch (Exception e) {
+    // e.printStackTrace();
+    // return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error
+    // processing image");
+    // }
+    // }
+
+    // // Helper method to extract value based on keyword
+    // private String extractValue(String text, String key) {
+    // // ค้นหาค่าจากข้อความที่ได้รับจาก OCR
+    // String pattern = key + "\\s*(\\d+)";
+    // java.util.regex.Matcher matcher =
+    // java.util.regex.Pattern.compile(pattern).matcher(text);
+    // if (matcher.find()) {
+    // return matcher.group(1);
+    // }
+    // return null;
+    // }
+
+    // // Class to represent the blood pressure data
+    // public static class BloodPressureData {
+    // private String sys;
+    // private String dia;
+    // private String pul;
+
+    // public BloodPressureData(String sys, String dia, String pul) {
+    // this.sys = sys;
+    // this.dia = dia;
+    // this.pul = pul;
+    // }
+
+    // // Getters and setters
+    // public String getSys() {
+    // return sys;
+    // }
+
+    // public String getDia() {
+    // return dia;
+    // }
+
+    // public String getPul() {
+    // return pul;
+    // }
+    // }
 }

@@ -6,9 +6,9 @@ import lombok.Setter;
 @Getter
 @Setter
 public class GetBloodPressureCurrentResponse {
-    private String sys;
-    private String dia;
-    private String pul;
+    private String systolicPressure;
+    private String diastolicPressure;
+    private String pulseRate;
     private DropdownUserResp createBy;
 
     /**

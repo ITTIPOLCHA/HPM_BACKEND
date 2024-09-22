@@ -15,8 +15,8 @@ public interface StmUserRepository extends MongoRepository<User, String> {
         @Query("{'email': ?0}")
         Optional<User> findByEmail(String email);
 
-        @Query("{'email': ?0, 'phone': ?1 }")
-        Optional<User> findByEmailAndPhone(String email, String phone);
+        @Query("{'email': ?0, 'phoneNumber': ?1 }")
+        Optional<User> findByEmailAndPhoneNumber(String email, String phone);
 
         @Query("{'_id': ?0}")
         Optional<GetUserResponse> findGetUserByIdRespByUser_id(String userId);
@@ -28,9 +28,9 @@ public interface StmUserRepository extends MongoRepository<User, String> {
 
         Boolean existsByEmail(String email);
 
-        Boolean existsByPhone(String phone);
+        Boolean existsByPhoneNumber(String phone);
 
-        Boolean existsByHn(String hn);
+        Boolean existsByHospitalNumber(String hn);
 
         Boolean existsByLineId(String lineId);
 

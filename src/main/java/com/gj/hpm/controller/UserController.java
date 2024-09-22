@@ -68,7 +68,7 @@ public class UserController {
     public ResponseEntity<?> getUserPaging(@RequestHeader("Authorization") String token,
             @RequestBody GetUserPagingRequest request) {
         try {
-            GetUserPagingResponse response = userService.getUserPaging(request);
+            BaseResponse response = userService.getUserPaging(request);
             return ResponseEntity.ok().body(response);
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());

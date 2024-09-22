@@ -3,6 +3,8 @@ package com.gj.hpm.dto.response;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import com.gj.hpm.util.Constant.Level;
+
 import lombok.Getter;
 import lombok.Setter;
 
@@ -11,15 +13,15 @@ import lombok.Setter;
 public class GetUserResponse extends BaseResponse {
     private String id;
     private String email;
-    private String hn;
-    private String phone;
+    private String hospitalNumber;
+    private String phoneNumber;
     private String firstName;
     private String lastName;
     private String lineName;
     private String pictureUrl;
     private String statusFlag;
-    private String level;
-    private boolean checkState;
+    private Level level;
+    private boolean isVerified;
     private DropdownUserResp createBy;
     private LocalDateTime createDate;
     private DropdownUserResp updateBy;
