@@ -7,21 +7,27 @@ import com.gj.hpm.dto.request.GetUserByIdRequest;
 import com.gj.hpm.dto.request.GetUserPagingRequest;
 import com.gj.hpm.dto.request.PasswordChangeRequest;
 import com.gj.hpm.dto.request.PasswordForgotRequest;
+import com.gj.hpm.dto.request.SignInRequest;
+import com.gj.hpm.dto.request.SignUpRequest;
 import com.gj.hpm.dto.request.UpdateUserByIdRequest;
 import com.gj.hpm.dto.request.UpdateUserByTokenRequest;
 import com.gj.hpm.dto.request.UpdateUserCheckStateRequest;
 import com.gj.hpm.dto.response.BaseResponse;
 import com.gj.hpm.dto.response.GetUserListByLevelResponse;
 import com.gj.hpm.dto.response.GetUserListByStatusFlagResponse;
-import com.gj.hpm.dto.response.GetUserPagingResponse;
 import com.gj.hpm.dto.response.GetUserResponse;
+import com.gj.hpm.dto.response.JwtResponse;
 
 public interface UserService {
+    JwtResponse signIn(SignInRequest request);
+
+    BaseResponse signUp(SignUpRequest request);
+
     GetUserResponse getUserById(GetUserByIdRequest request);
 
     GetUserResponse getUserByToken(String id);
 
-    GetUserPagingResponse getUserPaging(GetUserPagingRequest request);
+    BaseResponse getUserPaging(GetUserPagingRequest request);
 
     List<GetUserListByLevelResponse> getUserListByLevel();
 
@@ -37,7 +43,9 @@ public interface UserService {
 
     BaseResponse deleteUserByToken(String id, BaseRequest request);
 
-    BaseResponse changePassword(String id, PasswordChangeRequest request);
+    BaseResponse setInactive();
+
+    BaseResponse changePassword(String token, PasswordChangeRequest request);
 
     BaseResponse forgotPassword(PasswordForgotRequest request);
 }

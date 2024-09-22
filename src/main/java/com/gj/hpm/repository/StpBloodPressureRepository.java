@@ -10,9 +10,9 @@ import org.springframework.data.mongodb.repository.Query;
 
 import com.gj.hpm.dto.response.GetBloodPressureCurrentResponse;
 import com.gj.hpm.dto.response.GetBloodPressureResponse;
-import com.gj.hpm.entity.BloodPressure;
+import com.gj.hpm.entity.BloodPressureRecord;
 
-public interface StpBloodPressureRepository extends MongoRepository<BloodPressure, String> {
+public interface StpBloodPressureRepository extends MongoRepository<BloodPressureRecord, String> {
 
     @Query("{ '_id': ?0 }")
     Optional<GetBloodPressureResponse> findByIdGetBloodPressureResp(String id);
@@ -20,7 +20,7 @@ public interface StpBloodPressureRepository extends MongoRepository<BloodPressur
     Optional<GetBloodPressureResponse> findByIdAndCreateById(String id, String userId);
 
     @Query("{ '_id': ?0, 'createBy._id': ?1}")
-    Optional<BloodPressure> findByIdAndCreateBy_Id(String id, String userId);
+    Optional<BloodPressureRecord> findByIdAndCreateBy_Id(String id, String userId);
 
     @Query("{ 'createBy._id': ?0 }")
     List<GetBloodPressureResponse> findByCreateBy_Id(String userId);
@@ -32,7 +32,7 @@ public interface StpBloodPressureRepository extends MongoRepository<BloodPressur
     boolean existsByIdAndCreateById(String id, String createById);
 
     @Aggregation(pipeline = { "{ $sort: { 'createDate': -1 } }", "{ $limit: 1 }" })
-    GetBloodPressureCurrentResponse findByCurrent();
+    Optional<GetBloodPressureCurrentResponse> findByCurrent();
 
     void deleteByCreateBy_Id(String createById);
 }

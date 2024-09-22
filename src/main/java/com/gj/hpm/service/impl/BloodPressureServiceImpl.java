@@ -37,7 +37,7 @@ import com.gj.hpm.dto.response.BaseStatusResponse;
 import com.gj.hpm.dto.response.GetBloodPressureDetailPagingResponse;
 import com.gj.hpm.dto.response.GetBloodPressurePagingResponse;
 import com.gj.hpm.dto.response.GetBloodPressureResponse;
-import com.gj.hpm.entity.BloodPressure;
+import com.gj.hpm.entity.BloodPressureRecord;
 import com.gj.hpm.entity.User;
 import com.gj.hpm.repository.StmUserRepository;
 import com.gj.hpm.repository.StpBloodPressureRepository;
@@ -45,7 +45,6 @@ import com.gj.hpm.service.BloodPressureService;
 import com.gj.hpm.util.Constant.ApiReturn;
 import com.gj.hpm.util.Constant.Level;
 import com.gj.hpm.util.Constant.StatusFlag;
-import com.gj.hpm.util.ImageController;
 import com.gj.hpm.util.LineUtil;
 import com.gj.hpm.util.MongoUtil;
 
@@ -64,9 +63,6 @@ public class BloodPressureServiceImpl implements BloodPressureService {
         @Autowired
         private MongoTemplate mongoTemplate;
 
-        @Autowired
-        private ImageController imageController;
-
         @Transactional
         @Override
         public BaseResponse createBloodPressure(String id, CreateBloodPressureRequest request) {
@@ -78,10 +74,10 @@ public class BloodPressureServiceImpl implements BloodPressureService {
                                                                         "ไม่พบข้อมูลผู้ใช้งาน"))));
                 if (!stpBloodPressureRepository
                                 .existsByCreateDateAfterAndCreateById(LocalDateTime.now().minusHours(1), id)) {
-                        BloodPressure bloodPressure = new BloodPressure();
-                        bloodPressure.setSys(request.getSys());
-                        bloodPressure.setDia(request.getDia());
-                        bloodPressure.setPul(request.getPul());
+                        BloodPressureRecord bloodPressure = new BloodPressureRecord();
+                        bloodPressure.setSystolicPressure(request.getSys());
+                        bloodPressure.setDiastolicPressure(request.getDia());
+                        bloodPressure.setPulseRate(request.getPul());
                         bloodPressure.setStatusFlag(StatusFlag.ACTIVE.code());
                         bloodPressure.setCreateBy(User.builder().id(id).build());
                         bloodPressure.setUpdateBy(User.builder().id(id).build());
@@ -99,7 +95,7 @@ public class BloodPressureServiceImpl implements BloodPressureService {
                                 user.setLevel(Level.WARNING1);
                         } else {
                                 user.setLevel(Level.NORMAL);
-                                user.setCheckState(true);
+                                user.setVerified(true);
                         }
                         stmUserRepository.save(user);
 
@@ -140,11 +136,12 @@ public class BloodPressureServiceImpl implements BloodPressureService {
         @Transactional
         @Override
         public BaseResponse getBloodPressureFromImage(MultipartFile image) {
-                String fileName = imageController.processImage(image);
+                // String fileName = imageController.processImage(image);
                 BaseResponse response = new BaseResponse();
-                response.setStatus(new BaseStatusResponse(ApiReturn.SUCCESS.code(), ApiReturn.SUCCESS.description(),
-                                Collections.singletonList(new BaseDetailsResponse("Success ✅",
-                                                fileName))));
+                // response.setStatus(new BaseStatusResponse(ApiReturn.SUCCESS.code(),
+                // ApiReturn.SUCCESS.description(),
+                // Collections.singletonList(new BaseDetailsResponse("Success ✅",
+                // fileName))));
                 return response;
         }
 
@@ -218,7 +215,7 @@ public class BloodPressureServiceImpl implements BloodPressureService {
                 AggregationResults<GetBloodPressureDetailPagingResponse> aggregationResults = mongoTemplate.aggregate(
                                 aggregation, "bloodPressure", GetBloodPressureDetailPagingResponse.class);
                 List<GetBloodPressureDetailPagingResponse> results = aggregationResults.getMappedResults();
-                long total = mongoTemplate.count(new Query(criteria), BloodPressure.class, "bloodPressure");
+                long total = mongoTemplate.count(new Query(criteria), BloodPressureRecord.class, "bloodPressureRecord");
                 return new PageImpl<>(results, pageable, total);
         }
 
@@ -259,7 +256,7 @@ public class BloodPressureServiceImpl implements BloodPressureService {
                 AggregationResults<GetBloodPressureDetailPagingResponse> aggregationResults = mongoTemplate.aggregate(
                                 aggregation, "bloodPressure", GetBloodPressureDetailPagingResponse.class);
                 List<GetBloodPressureDetailPagingResponse> results = aggregationResults.getMappedResults();
-                long total = mongoTemplate.count(new Query(criteria), BloodPressure.class, "bloodPressure");
+                long total = mongoTemplate.count(new Query(criteria), BloodPressureRecord.class, "bloodPressureRecord");
                 return new PageImpl<>(results, pageable, total);
         }
 
@@ -281,15 +278,14 @@ public class BloodPressureServiceImpl implements BloodPressureService {
         @Transactional
         @Override
         public BaseResponse updateBloodPressureById(UpdateBloodPressureByIdRequest request) {
-                BloodPressure bloodPressure = stpBloodPressureRepository
+                BloodPressureRecord bloodPressure = stpBloodPressureRepository
                                 .findById(request.getBloodPressureId()).orElse(null);
                 if (bloodPressure != null) {
-                        bloodPressure.setSys(request.getSys());
-                        bloodPressure.setDia(request.getDia());
-                        bloodPressure.setPul(request.getPul());
+                        bloodPressure.setSystolicPressure(request.getSys());
+                        bloodPressure.setDiastolicPressure(request.getDia());
+                        bloodPressure.setPulseRate(request.getPul());
                         bloodPressure.setCreateBy(User.builder().id(request.getUserId()).build());
                         bloodPressure.setUpdateBy(User.builder().id(request.getActionId()).build());
-                        bloodPressure.setUpdateDate(LocalDateTime.now());
                         stpBloodPressureRepository.save(bloodPressure);
                         return new BaseResponse(
                                         new BaseStatusResponse(ApiReturn.SUCCESS.code(),
@@ -306,14 +302,13 @@ public class BloodPressureServiceImpl implements BloodPressureService {
 
         @Override
         public BaseResponse updateBloodPressureByToken(String id, UpdateBloodPressureByTokenRequest request) {
-                BloodPressure bloodPressure = stpBloodPressureRepository
+                BloodPressureRecord bloodPressure = stpBloodPressureRepository
                                 .findByIdAndCreateBy_Id(request.getBloodPressureId(), id).orElse(null);
                 if (bloodPressure != null) {
-                        bloodPressure.setSys(request.getSys());
-                        bloodPressure.setDia(request.getDia());
-                        bloodPressure.setPul(request.getPul());
+                        bloodPressure.setSystolicPressure(request.getSys());
+                        bloodPressure.setDiastolicPressure(request.getDia());
+                        bloodPressure.setPulseRate(request.getPul());
                         bloodPressure.setUpdateBy(User.builder().id(id).build());
-                        bloodPressure.setUpdateDate(LocalDateTime.now());
                         stpBloodPressureRepository.save(bloodPressure);
                         return new BaseResponse(
                                         new BaseStatusResponse(ApiReturn.SUCCESS.code(),

@@ -17,8 +17,8 @@ public class GetUserPagingRequest extends BasePaginationRequest {
     @Email(regexp = "[a-z0-9._%+-]+@[a-z0-9.-]+\\.[a-z]{2,3}", message = "{msg.signup.err.valid.email}")
     private String email;
     @MobilePhone
-    private String phone;
-    private String hn;
+    private String phoneNumber;
+    private String hospitalNumber;
     private String statusFlag;
     private String level;
 }

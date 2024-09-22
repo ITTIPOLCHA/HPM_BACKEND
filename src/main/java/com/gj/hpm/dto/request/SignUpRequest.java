@@ -21,10 +21,10 @@ public class SignUpRequest extends BaseRequest {
     @Password
     private String password;
     @NotEmpty(message = "{notEmpty.message}")
-    private String hn;
+    private String hospitalNumber;
     @NotEmpty(message = "{notEmpty.message}")
     @MobilePhone
-    private String phone;
+    private String phoneNumber;
     @NotEmpty(message = "{notEmpty.message}")
     private String firstName;
     @NotEmpty(message = "{notEmpty.message}")

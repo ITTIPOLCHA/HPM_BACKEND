@@ -1,0 +1,5 @@
+{
+    "scripts": {
+        "start": "env-cmd -f .env mvn spring-boot:run"
+    }
+}

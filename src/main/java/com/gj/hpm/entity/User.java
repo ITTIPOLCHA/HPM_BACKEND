@@ -29,21 +29,24 @@ public class User extends BaseEntity {
 
     @Indexed(unique = true)
     private String username;
-
     private String password;
-    private String hn;
-    private String phone;
+
+    private String hospitalNumber;
+    private String phoneNumber;
     private String firstName;
     private String lastName;
 
+    // Line
     private String lineId;
-    private String lineSubId;
+    private String lineSubjectId;
     private String lineName;
-
     private String pictureUrl;
 
-    private Level level;
-    private boolean checkState;
+    @Builder.Default
+    private Level level = Level.NORMAL;
+
+    @Builder.Default
+    private boolean isVerified = false;
 
     @Builder.Default
     @DBRef
