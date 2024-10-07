@@ -1,17 +1,10 @@
 package com.gj.hpm.controller;
 
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import org.apache.commons.codec.binary.Base64;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
@@ -21,7 +14,6 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.client.RestTemplate;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.multipart.MultipartHttpServletRequest;
 
@@ -48,15 +40,10 @@ import jakarta.servlet.http.HttpServletRequest;
 public class BloodPressureController {
 
     @Autowired
-    private RestTemplate restTemplate;
+    private BloodPressureService bloodPressureService;
     
     @Autowired
-    private BloodPressureService bloodPressureService;
-    @Autowired
     private JwtUtils jwtUtils;
-
-    @Value("${hpm.app.api.key}")
-    private String apiKey;
 
     // ! C
     @PostMapping("/createBloodPressure")
@@ -198,66 +185,18 @@ public class BloodPressureController {
     @PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<?> uploadImage(@RequestHeader("Authorization") String token, HttpServletRequest request)
             throws IOException {
-        MultipartFile imageFile = ((MultipartHttpServletRequest) request).getFile("file");
-        byte[] imageByte = new byte[0];
-
-        if (imageFile != null)
-            imageByte = imageFile.getBytes();
-
-        // แปลงไฟล์ภาพเป็น Base64
-        String base64Image = Base64.encodeBase64String(imageByte);
-
-        // เตรียมข้อมูลที่ต้องการส่งไปยัง Flask API
-        Map<String, String> requestBody = new HashMap<>();
-        requestBody.put("api_key", apiKey);
-        requestBody.put("image_data", base64Image);
-
-        // Set up headers
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-        headers.setBearerAuth(apiKey);
-
-        // Create the payload
-        Map<String, Object> payload = new HashMap<>();
-        payload.put("model", "gpt-4o");
-
-        Map<String, Object> userMessage = new HashMap<>();
-        userMessage.put("role", "user");
-
-        Map<String, Object> content = new HashMap<>();
-        content.put("type", "text");
-        content.put("text", "I want the blood pressure value from this image as JSON sys, dia, pul text.");
-
-        Map<String, Object> imageContent = new HashMap<>();
-        imageContent.put("type", "image_url");
-        imageContent.put("image_url", Map.of("url", "data:image/png;base64," + base64Image));
-
-        userMessage.put("content", new Object[] { content, imageContent });
-        payload.put("messages", new Object[] { userMessage });
-
-        // Prepare the request entity
-        HttpEntity<Map<String, Object>> requestEntity = new HttpEntity<>(payload, headers);
-
-        // Make the API call
-        String apiUrl = "https://api.openai.com/v1/chat/completions";
         try {
-            Map<String, Object> response = restTemplate.exchange(apiUrl, HttpMethod.POST, requestEntity, Map.class)
-                    .getBody();
+            MultipartFile imageFile = ((MultipartHttpServletRequest) request).getFile("file");
+            byte[] imageByte = new byte[0];
 
-            // Extract and return the response
-            if (response != null && response.containsKey("choices")) {
-                Map<String, Object> choice = (Map<String, Object>) ((List<Map<String, Object>>) response.get("choices"))
-                        .get(0).get("message");
-                // Map<String, Object> message = (Map<String, Object>) choice.get("message");
-                return new ResponseEntity<>((String) choice.get("content"),
-                        HttpStatus.OK);
-            } else {
-                return new ResponseEntity<>("Could not extract text from image.",
-                        HttpStatus.BAD_REQUEST);
+            if (imageFile != null) {
+                imageByte = imageFile.getBytes();
             }
+
+            BaseResponse response = bloodPressureService.uploadImage(Base64.encodeBase64String(imageByte));
+            return ResponseEntity.ok().body(response);
         } catch (Exception e) {
-            e.printStackTrace();
+            return ResponseEntity.badRequest().body(e.getMessage());
         }
-        return null;
     }
 }

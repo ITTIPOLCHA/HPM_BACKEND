@@ -41,4 +41,6 @@ public interface BloodPressureService {
 
     BaseResponse deleteBloodPressureByToken(String id, DeleteBloodPressureByTokenRequest request);
 
+    BaseResponse uploadImage(String base64Image);
+
 }

@@ -2,7 +2,9 @@ package com.gj.hpm.service.impl;
 
 import java.time.LocalDateTime;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.commons.lang3.StringUtils;
 import org.bson.types.ObjectId;
@@ -18,8 +20,13 @@ import org.springframework.data.mongodb.core.aggregation.Aggregation;
 import org.springframework.data.mongodb.core.aggregation.AggregationResults;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.client.RestTemplate;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.gj.hpm.dto.request.CreateBloodPressureRequest;
@@ -54,6 +61,9 @@ public class BloodPressureServiceImpl implements BloodPressureService {
         @Value("${hpm.app.token.property}")
         private String token;
 
+        @Value("${hpm.app.api.key}")
+        private String apiKey;
+
         @Autowired
         private StpBloodPressureRepository stpBloodPressureRepository;
 
@@ -62,6 +72,9 @@ public class BloodPressureServiceImpl implements BloodPressureService {
 
         @Autowired
         private MongoTemplate mongoTemplate;
+
+        @Autowired
+        private RestTemplate restTemplate;
 
         @Transactional
         @Override
@@ -357,5 +370,59 @@ public class BloodPressureServiceImpl implements BloodPressureService {
                                 ApiReturn.BAD_REQUEST.description(),
                                 Collections.singletonList(
                                                 new BaseDetailsResponse("Not Found ❌", "ไม่พบข้อมูลความดันโลหิต"))));
+        }
+
+        @Override
+        public BaseResponse uploadImage(String base64Image) {
+                Map<String, String> requestBody = new HashMap<>();
+                requestBody.put("api_key", apiKey);
+                requestBody.put("image_data", base64Image);
+
+                // Set up headers
+                HttpHeaders headers = new HttpHeaders();
+                headers.setContentType(MediaType.APPLICATION_JSON);
+                headers.setBearerAuth(apiKey);
+
+                // Create the payload
+                Map<String, Object> payload = new HashMap<>();
+                payload.put("model", "gpt-4o");
+
+                Map<String, Object> userMessage = new HashMap<>();
+                userMessage.put("role", "user");
+
+                Map<String, Object> content = new HashMap<>();
+                content.put("type", "text");
+                content.put("text", "sys, dia, pul require.");
+
+                Map<String, Object> imageContent = new HashMap<>();
+                imageContent.put("type", "image_url");
+                imageContent.put("image_url", Map.of("url", "data:image/png;base64," + base64Image));
+
+                userMessage.put("content", new Object[] { content, imageContent });
+                payload.put("messages", new Object[] { userMessage });
+
+                // Prepare the request entity
+                HttpEntity<Map<String, Object>> requestEntity = new HttpEntity<>(payload, headers);
+
+                // Make the API call
+                String apiUrl = "https://api.openai.com/v1/chat/completions";
+                try {
+                        Map<String, Object> response = restTemplate
+                                        .exchange(apiUrl, HttpMethod.POST, requestEntity, Map.class)
+                                        .getBody();
+
+                        // Extract and return the response
+                        if (response != null && response.containsKey("choices")) {
+                                Map<String, Object> choice = (Map<String, Object>) ((List<Map<String, Object>>) response
+                                                .get("choices"))
+                                                .get(0).get("message");
+                                // Map<String, Object> message = (Map<String, Object>) choice.get("message");
+                                return null;
+                        }
+                } catch (Exception e) {
+                        e.printStackTrace();
+                }
+
+                return null;
         }
 }

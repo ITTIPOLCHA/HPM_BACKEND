@@ -2,6 +2,7 @@ package com.gj.hpm;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Import;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -9,6 +10,7 @@ import com.gj.hpm.config.WebConfig;
 
 @RestController
 @SpringBootApplication
+@ComponentScan(basePackages = {"com.gj.hpm"})
 @Import(WebConfig.class)
 public class HpmApplication {
 
