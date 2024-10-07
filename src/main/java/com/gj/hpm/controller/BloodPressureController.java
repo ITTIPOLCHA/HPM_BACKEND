@@ -1,8 +1,17 @@
 package com.gj.hpm.controller;
 
+import java.io.IOException;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
+import org.apache.commons.codec.binary.Base64;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
@@ -12,7 +21,9 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.client.RestTemplate;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.multipart.MultipartHttpServletRequest;
 
 import com.gj.hpm.config.security.jwt.JwtUtils;
 import com.gj.hpm.dto.request.CreateBloodPressureRequest;
@@ -29,14 +40,23 @@ import com.gj.hpm.dto.response.GetBloodPressurePagingResponse;
 import com.gj.hpm.dto.response.GetBloodPressureResponse;
 import com.gj.hpm.service.BloodPressureService;
 
+import jakarta.servlet.http.HttpServletRequest;
+
 @CrossOrigin(origins = "*", maxAge = 3600)
 @RestController
 @RequestMapping("/v1/bp")
 public class BloodPressureController {
+
+    @Autowired
+    private RestTemplate restTemplate;
+    
     @Autowired
     private BloodPressureService bloodPressureService;
     @Autowired
     private JwtUtils jwtUtils;
+
+    @Value("${hpm.app.api.key}")
+    private String apiKey;
 
     // ! C
     @PostMapping("/createBloodPressure")
@@ -175,72 +195,69 @@ public class BloodPressureController {
         }
     }
 
-    // @PostMapping("/upload")
-    // public ResponseEntity<?> extractBloodPressure(@RequestParam("file")
-    // MultipartFile file) {
-    // try {
-    // // Initialize Tesseract OCR instance
-    // Tesseract tesseract = new Tesseract();
-    // tesseract.setDatapath("/opt/homebrew/Cellar/tesseract"); // Path to tessdata
-    // directory
-    // tesseract.setLanguage("eng");
+    @PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<?> uploadImage(@RequestHeader("Authorization") String token, HttpServletRequest request)
+            throws IOException {
+        MultipartFile imageFile = ((MultipartHttpServletRequest) request).getFile("file");
+        byte[] imageByte = new byte[0];
 
-    // // Get InputStream from MultipartFile without saving to disk
-    // InputStream inputStream = file.getInputStream();
+        if (imageFile != null)
+            imageByte = imageFile.getBytes();
 
-    // // Perform OCR on the image using InputStream
-    // String result = tesseract.doOCR(javax.imageio.ImageIO.read(inputStream));
+        // แปลงไฟล์ภาพเป็น Base64
+        String base64Image = Base64.encodeBase64String(imageByte);
 
-    // // Extract sys, dia, and pul from OCR result using regex
-    // String sys = extractValue(result, "SYS");
-    // String dia = extractValue(result, "DIA");
-    // String pul = extractValue(result, "PUL");
+        // เตรียมข้อมูลที่ต้องการส่งไปยัง Flask API
+        Map<String, String> requestBody = new HashMap<>();
+        requestBody.put("api_key", apiKey);
+        requestBody.put("image_data", base64Image);
 
-    // // Return extracted values
-    // return ResponseEntity.ok(new BloodPressureData(sys, dia, pul));
+        // Set up headers
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.setBearerAuth(apiKey);
 
-    // } catch (Exception e) {
-    // e.printStackTrace();
-    // return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error
-    // processing image");
-    // }
-    // }
+        // Create the payload
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("model", "gpt-4o");
 
-    // // Helper method to extract value based on keyword
-    // private String extractValue(String text, String key) {
-    // // ค้นหาค่าจากข้อความที่ได้รับจาก OCR
-    // String pattern = key + "\\s*(\\d+)";
-    // java.util.regex.Matcher matcher =
-    // java.util.regex.Pattern.compile(pattern).matcher(text);
-    // if (matcher.find()) {
-    // return matcher.group(1);
-    // }
-    // return null;
-    // }
+        Map<String, Object> userMessage = new HashMap<>();
+        userMessage.put("role", "user");
 
-    // // Class to represent the blood pressure data
-    // public static class BloodPressureData {
-    // private String sys;
-    // private String dia;
-    // private String pul;
+        Map<String, Object> content = new HashMap<>();
+        content.put("type", "text");
+        content.put("text", "I want the blood pressure value from this image as JSON sys, dia, pul text.");
 
-    // public BloodPressureData(String sys, String dia, String pul) {
-    // this.sys = sys;
-    // this.dia = dia;
-    // this.pul = pul;
-    // }
+        Map<String, Object> imageContent = new HashMap<>();
+        imageContent.put("type", "image_url");
+        imageContent.put("image_url", Map.of("url", "data:image/png;base64," + base64Image));
 
-    // // Getters and setters
-    // public String getSys() {
-    // return sys;
-    // }
+        userMessage.put("content", new Object[] { content, imageContent });
+        payload.put("messages", new Object[] { userMessage });
 
-    // public String getDia() {
-    // return dia;
-    // }
+        // Prepare the request entity
+        HttpEntity<Map<String, Object>> requestEntity = new HttpEntity<>(payload, headers);
 
-    // public String getPul() {
-    // return pul;
-    // }
-    // }
+        // Make the API call
+        String apiUrl = "https://api.openai.com/v1/chat/completions";
+        try {
+            Map<String, Object> response = restTemplate.exchange(apiUrl, HttpMethod.POST, requestEntity, Map.class)
+                    .getBody();
+
+            // Extract and return the response
+            if (response != null && response.containsKey("choices")) {
+                Map<String, Object> choice = (Map<String, Object>) ((List<Map<String, Object>>) response.get("choices"))
+                        .get(0).get("message");
+                // Map<String, Object> message = (Map<String, Object>) choice.get("message");
+                return new ResponseEntity<>((String) choice.get("content"),
+                        HttpStatus.OK);
+            } else {
+                return new ResponseEntity<>("Could not extract text from image.",
+                        HttpStatus.BAD_REQUEST);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
 }
