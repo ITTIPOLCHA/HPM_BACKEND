@@ -2,8 +2,6 @@ package com.gj.hpm.service;
 
 import java.util.List;
 
-import org.springframework.web.multipart.MultipartFile;
-
 import com.gj.hpm.dto.request.CreateBloodPressureRequest;
 import com.gj.hpm.dto.request.DeleteBloodPressureByIdRequest;
 import com.gj.hpm.dto.request.DeleteBloodPressureByTokenRequest;
@@ -19,8 +17,6 @@ import com.gj.hpm.dto.response.GetBloodPressureResponse;
 
 public interface BloodPressureService {
     BaseResponse createBloodPressure(String id, CreateBloodPressureRequest request);
-
-    BaseResponse getBloodPressureFromImage(MultipartFile image);
 
     GetBloodPressureResponse getBloodPressureById(GetBloodPressureRequest request);
 
@@ -41,6 +37,6 @@ public interface BloodPressureService {
 
     BaseResponse deleteBloodPressureByToken(String id, DeleteBloodPressureByTokenRequest request);
 
-    BaseResponse uploadImage(String base64Image);
+    BaseResponse uploadImage(String id, String base64Image);
 
 }

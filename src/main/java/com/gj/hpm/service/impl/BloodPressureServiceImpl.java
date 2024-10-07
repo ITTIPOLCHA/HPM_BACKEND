@@ -27,8 +27,9 @@ import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
-import org.springframework.web.multipart.MultipartFile;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.gj.hpm.dto.request.CreateBloodPressureRequest;
 import com.gj.hpm.dto.request.DeleteBloodPressureByIdRequest;
 import com.gj.hpm.dto.request.DeleteBloodPressureByTokenRequest;
@@ -144,18 +145,6 @@ public class BloodPressureServiceImpl implements BloodPressureService {
                                 Collections.singletonList(
                                                 new BaseDetailsResponse("Fail ❌",
                                                                 "ข้อมูลความดันโลหิตถูกบันทึกไปแล้ว ใน 1 ชั่วโมงนี้"))));
-        }
-
-        @Transactional
-        @Override
-        public BaseResponse getBloodPressureFromImage(MultipartFile image) {
-                // String fileName = imageController.processImage(image);
-                BaseResponse response = new BaseResponse();
-                // response.setStatus(new BaseStatusResponse(ApiReturn.SUCCESS.code(),
-                // ApiReturn.SUCCESS.description(),
-                // Collections.singletonList(new BaseDetailsResponse("Success ✅",
-                // fileName))));
-                return response;
         }
 
         @Transactional
@@ -373,56 +362,73 @@ public class BloodPressureServiceImpl implements BloodPressureService {
         }
 
         @Override
-        public BaseResponse uploadImage(String base64Image) {
-                Map<String, String> requestBody = new HashMap<>();
-                requestBody.put("api_key", apiKey);
-                requestBody.put("image_data", base64Image);
+        public BaseResponse uploadImage(String id, String base64Image) {
+                if (!stpBloodPressureRepository
+                                .existsByCreateDateAfterAndCreateById(LocalDateTime.now().minusHours(1), id)) {
+                        Map<String, String> requestBody = new HashMap<>();
+                        requestBody.put("api_key", apiKey);
+                        requestBody.put("image_data", base64Image);
 
-                // Set up headers
-                HttpHeaders headers = new HttpHeaders();
-                headers.setContentType(MediaType.APPLICATION_JSON);
-                headers.setBearerAuth(apiKey);
+                        // Set up headers
+                        HttpHeaders headers = new HttpHeaders();
+                        headers.setContentType(MediaType.APPLICATION_JSON);
+                        headers.setBearerAuth(apiKey);
 
-                // Create the payload
-                Map<String, Object> payload = new HashMap<>();
-                payload.put("model", "gpt-4o");
+                        // Create the payload
+                        Map<String, Object> payload = new HashMap<>();
+                        payload.put("model", "gpt-4o");
 
-                Map<String, Object> userMessage = new HashMap<>();
-                userMessage.put("role", "user");
+                        Map<String, Object> userMessage = new HashMap<>();
+                        userMessage.put("role", "user");
 
-                Map<String, Object> content = new HashMap<>();
-                content.put("type", "text");
-                content.put("text", "sys, dia, pul require.");
+                        Map<String, Object> content = new HashMap<>();
+                        content.put("type", "text");
+                        content.put("text", "sys, dia, pul require json from only.");
 
-                Map<String, Object> imageContent = new HashMap<>();
-                imageContent.put("type", "image_url");
-                imageContent.put("image_url", Map.of("url", "data:image/png;base64," + base64Image));
+                        Map<String, Object> imageContent = new HashMap<>();
+                        imageContent.put("type", "image_url");
+                        imageContent.put("image_url",
+                                        Map.of("detail", "low", "url", "data:image/png;base64," + base64Image));
 
-                userMessage.put("content", new Object[] { content, imageContent });
-                payload.put("messages", new Object[] { userMessage });
+                        userMessage.put("content", new Object[] { content, imageContent });
+                        payload.put("messages", new Object[] { userMessage });
 
-                // Prepare the request entity
-                HttpEntity<Map<String, Object>> requestEntity = new HttpEntity<>(payload, headers);
+                        // Prepare the request entity
+                        HttpEntity<Map<String, Object>> requestEntity = new HttpEntity<>(payload, headers);
 
-                // Make the API call
-                String apiUrl = "https://api.openai.com/v1/chat/completions";
-                try {
-                        Map<String, Object> response = restTemplate
-                                        .exchange(apiUrl, HttpMethod.POST, requestEntity, Map.class)
-                                        .getBody();
+                        // Make the API call
+                        String apiUrl = "https://api.openai.com/v1/chat/completions";
+                        try {
+                                @SuppressWarnings("unchecked")
+                                Map<String, Object> response = restTemplate
+                                                .exchange(apiUrl, HttpMethod.POST, requestEntity, Map.class).getBody();
 
-                        // Extract and return the response
-                        if (response != null && response.containsKey("choices")) {
-                                Map<String, Object> choice = (Map<String, Object>) ((List<Map<String, Object>>) response
-                                                .get("choices"))
-                                                .get(0).get("message");
-                                // Map<String, Object> message = (Map<String, Object>) choice.get("message");
-                                return null;
+                                // Extract and return the response
+                                if (response != null && response.containsKey("choices")) {
+                                        @SuppressWarnings("unchecked")
+                                        String result = (String) ((Map<String, Object>) ((List<Map<String, Object>>) response
+                                                        .get("choices")).get(0).get("message")).get("content");
+                                        String jsonString = result.substring(result.indexOf("{"));
+                                        ObjectMapper objectMapper = new ObjectMapper();
+                                        JsonNode rootNode = objectMapper.readTree(jsonString);
+ 
+                                        int sys = rootNode.get("sys").asInt();
+                                        int dia = rootNode.get("dia").asInt();
+                                        int pul = rootNode.get("pul").asInt();
+                                        CreateBloodPressureRequest bloodPressureRequest = new CreateBloodPressureRequest();
+                                        bloodPressureRequest.setSys(sys+"");
+                                        bloodPressureRequest.setDia(dia+"");
+                                        bloodPressureRequest.setPul(pul+"");
+                                        return createBloodPressure(id,bloodPressureRequest);
+                                }
+                        } catch (Exception e) {
+                                e.printStackTrace();
                         }
-                } catch (Exception e) {
-                        e.printStackTrace();
                 }
-
-                return null;
+                return new BaseResponse(new BaseStatusResponse(ApiReturn.BAD_REQUEST.code(),
+                                ApiReturn.BAD_REQUEST.description(),
+                                Collections.singletonList(
+                                                new BaseDetailsResponse("Fail ❌",
+                                                                "ข้อมูลความดันโลหิตถูกบันทึกไปแล้ว ใน 1 ชั่วโมงนี้"))));
         }
 }

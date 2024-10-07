@@ -12,7 +12,6 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.multipart.MultipartHttpServletRequest;
@@ -41,7 +40,7 @@ public class BloodPressureController {
 
     @Autowired
     private BloodPressureService bloodPressureService;
-    
+
     @Autowired
     private JwtUtils jwtUtils;
 
@@ -53,20 +52,6 @@ public class BloodPressureController {
             BaseResponse response = bloodPressureService.createBloodPressure(jwtUtils.getIdFromHeader(token),
                     request);
             return ResponseEntity.ok().body(response);
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
-        }
-    }
-
-    @PostMapping(value = "/getBloodPressureFromImage", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<?> getBloodPressureFromImage(@RequestParam("image") MultipartFile image) {
-        try {
-            if (image == null) {
-                return ResponseEntity.badRequest().body("Image is required.");
-            }
-            BaseResponse response = bloodPressureService.getBloodPressureFromImage(image);
-            return ResponseEntity.ok().body(response);
-
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
@@ -193,7 +178,7 @@ public class BloodPressureController {
                 imageByte = imageFile.getBytes();
             }
 
-            BaseResponse response = bloodPressureService.uploadImage(Base64.encodeBase64String(imageByte));
+            BaseResponse response = bloodPressureService.uploadImage(jwtUtils.getIdFromHeader(token),Base64.encodeBase64String(imageByte));
             return ResponseEntity.ok().body(response);
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());
