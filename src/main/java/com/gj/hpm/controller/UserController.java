@@ -21,7 +21,6 @@ import com.gj.hpm.dto.request.UpdateUserCheckStateRequest;
 import com.gj.hpm.dto.response.BaseResponse;
 import com.gj.hpm.dto.response.GetUserListByLevelResponse;
 import com.gj.hpm.dto.response.GetUserListByStatusFlagResponse;
-import com.gj.hpm.dto.response.GetUserPagingResponse;
 import com.gj.hpm.dto.response.GetUserResponse;
 import com.gj.hpm.service.UserService;
 
