@@ -57,15 +57,9 @@ public class WebSecurityConfig {
                 .exceptionHandling(exception -> exception.authenticationEntryPoint(unauthorizedHandler))
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> {
-                    auth.requestMatchers("/v1/system/**", "/v3/api-docs").permitAll()
-                            .requestMatchers("/v1/system/forgotPassword").permitAll()
-                            .requestMatchers("/v1/test/**").permitAll()
-                            .requestMatchers("/v1/user/a/**").hasRole("ADMIN")
-                            .requestMatchers("/v1/user/u/**").permitAll()
-                            .requestMatchers("/v1/bp/a/**").hasRole("ADMIN")
-                            .requestMatchers("/v1/bp/u/**").permitAll()
-                            .requestMatchers("/v1/bp/createBloodPressure").permitAll()
-                            .requestMatchers("/v1/dropdown/**").hasRole("ADMIN")
+                    auth.requestMatchers("/v1/system/**", "/v3/api-docs", "/v1/system/forgotPassword", "/v1/test/**",
+                            "/v1/user/u/**", "/v1/bp/u/**", "/v1/bp/createBloodPressure").permitAll()
+                            .requestMatchers("/v1/user/a/**", "/v1/bp/a/**", "/v1/dropdown/**").hasRole("ADMIN")
                             .anyRequest()
                             .authenticated();
                 });
