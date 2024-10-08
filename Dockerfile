@@ -17,8 +17,8 @@
 
 
 # ---- Build Stage ---- #
-# Use a smaller base image for Maven build
-FROM maven:3.9.6-amazoncorretto-21-alpine as BUILDER
+# Use a different Maven image with Alpine
+FROM maven:3.9.6-eclipse-temurin-17-alpine as BUILDER
 
 # Set working directory
 WORKDIR /app
@@ -34,8 +34,8 @@ COPY src ./src
 RUN mvn clean package -Pprod -DskipTests
 
 # ---- Runtime Stage ---- #
-# Use a smaller runtime JDK image for Amazon Corretto
-FROM amazoncorretto:21-alpine-jdk
+# Use an Alpine-based JDK for runtime
+FROM eclipse-temurin:17-jre-alpine
 
 # Set working directory in the runtime container
 WORKDIR /app
@@ -48,3 +48,4 @@ EXPOSE 8880
 
 # Run the application
 CMD ["java", "-jar", "app.jar"]
+
