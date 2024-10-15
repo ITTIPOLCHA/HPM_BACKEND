@@ -9,7 +9,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.gj.hpm.dto.response.GetStateResponse;
 import com.gj.hpm.entity.User;
 import com.gj.hpm.repository.StmUserRepository;
-import com.gj.hpm.repository.StpBloodPressureRepository;
+import com.gj.hpm.repository.BloodPressureRecordRepository;
 import com.gj.hpm.service.StateService;
 import com.gj.hpm.util.Constant.Level;
 import com.gj.hpm.util.Constant.StatusFlag;
@@ -20,7 +20,7 @@ public class StateServiceImpl implements StateService {
         @Autowired
         private StmUserRepository stmUserRepository;
         @Autowired
-        private StpBloodPressureRepository stpBloodPressureRepository;
+        private BloodPressureRecordRepository stpBloodPressureRepository;
 
         @Override
         @Transactional(readOnly = true)

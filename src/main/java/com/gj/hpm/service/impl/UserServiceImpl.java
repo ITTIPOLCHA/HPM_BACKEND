@@ -62,7 +62,7 @@ import com.gj.hpm.entity.Role;
 import com.gj.hpm.entity.User;
 import com.gj.hpm.repository.StmRoleRepository;
 import com.gj.hpm.repository.StmUserRepository;
-import com.gj.hpm.repository.StpBloodPressureRepository;
+import com.gj.hpm.repository.BloodPressureRecordRepository;
 import com.gj.hpm.service.UserService;
 import com.gj.hpm.util.Constant.ApiReturn;
 import com.gj.hpm.util.Constant.Key;
@@ -95,7 +95,7 @@ public class UserServiceImpl implements UserService {
         StmRoleRepository roleRepository;
 
         @Autowired
-        private StpBloodPressureRepository stpBloodPressureRepository;
+        private BloodPressureRecordRepository stpBloodPressureRepository;
 
         @Autowired
         MongoTemplate mongoTemplate;
@@ -111,30 +111,22 @@ public class UserServiceImpl implements UserService {
 
         @Override
         public JwtResponse signIn(SignInRequest request) {
-                JWTClaimsSet claimsSet = null;
-                String lineId = null;
+                // Check Line Token
                 if (StringUtils.isNotBlank(request.getLineToken())) {
-                        claimsSet = jwtUtils.decodeES256Jwt(request.getLineToken());
-                        lineId = claimsSet.getSubject();
-                        log.info("Line id : "+lineId);
-                        if (TypeSignIn.line.toString().equals(request.getType())) {
-                                User user = stmUserRepository.findByLineId(lineId)
-                                                .orElseThrow();
-                                request.setEmail(user.getEmail());
-                                request.setPassword(Encryption.decodedData(user.getLineSubjectId()));
-                        } else {
-                                User user = stmUserRepository.findByEmail(request.getEmail())
-                                                .orElseThrow();
-                                user.setLineId(lineId);
-                                user.setLineName(claimsSet.getClaim(Key.name.toString()).toString());
-                                user.setPictureUrl(claimsSet.getClaim(Key.picture.toString()).toString());
+                        JWTClaimsSet claimsSet = jwtUtils.decodeES256Jwt(request.getLineToken());
+                        String lineId = claimsSet.getSubject();
+                        User user = handleUserSignIn(request, lineId, claimsSet);
+                        if (updateUserWithLineData(user, lineId, claimsSet)) {
                                 stmUserRepository.save(user);
                         }
                 }
+                // Authentication
                 Authentication authentication = authenticationManager.authenticate(
                                 new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword()));
                 SecurityContextHolder.getContext().setAuthentication(authentication);
+                // Create Jwt Token
                 String jwt = jwtUtils.generateJwtToken(authentication);
+                //
                 UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
                 List<String> roles = userDetails.getAuthorities().stream()
                                 .map(GrantedAuthority::getAuthority)
@@ -144,6 +136,40 @@ public class UserServiceImpl implements UserService {
                                 userDetails.getEmail(),
                                 userDetails.getName(),
                                 roles);
+        }
+
+        private User handleUserSignIn(SignInRequest request, String lineId, JWTClaimsSet claimsSet) {
+                // Line Or Email
+                if (TypeSignIn.line.toString().equals(request.getType())) {
+                        User user = stmUserRepository.findByLineId(lineId)
+                                        .orElseThrow();
+                        request.setEmail(user.getEmail());
+                        request.setPassword(Encryption.decodedData(user.getLineSubjectId()));
+                        return user;
+                } else {
+                        return stmUserRepository.findByEmail(request.getEmail())
+                                        .orElseThrow();
+                }
+        }
+
+        private boolean updateUserWithLineData(User user, String lineId, JWTClaimsSet claimsSet) {
+                boolean isUpdated = false;
+                // Check update data from line.
+                if (!StringUtils.equals(user.getLineId(), lineId)) {
+                        user.setLineId(lineId);
+                        isUpdated = true;
+                }
+                String lineName = claimsSet.getClaim(Key.name.toString()).toString();
+                if (!StringUtils.equals(user.getLineName(), lineName)) {
+                        user.setLineName(lineName);
+                        isUpdated = true;
+                }
+                String pictureUrl = claimsSet.getClaim(Key.picture.toString()).toString();
+                if (!StringUtils.equals(user.getPictureUrl(), pictureUrl)) {
+                        user.setPictureUrl(pictureUrl);
+                        isUpdated = true;
+                }
+                return isUpdated;
         }
 
         @Override
@@ -192,8 +218,6 @@ public class UserServiceImpl implements UserService {
                 user.setRoles(roles);
                 user.setUsername(request.getEmail());
                 user.setPassword(encoder.encode(request.getPassword()));
-                user.setCreateDate(LocalDateTime.now());
-                user.setUpdateDate(LocalDateTime.now());
                 stmUserRepository.save(user);
                 user.setCreateBy(User.builder().id(user.getId()).build());
                 user.setUpdateBy(User.builder().id(user.getId()).build());

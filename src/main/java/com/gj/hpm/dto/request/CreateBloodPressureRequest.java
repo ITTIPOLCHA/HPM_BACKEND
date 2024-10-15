@@ -11,9 +11,9 @@ import lombok.Setter;
 @Validated
 public class CreateBloodPressureRequest extends BaseRequest {
     @NotBlank(message = "{notEmpty.message}")
-    private String sys;
+    private int systolicPressure;
     @NotBlank(message = "{notEmpty.message}")
-    private String dia;
+    private int diastolicPressure;
     @NotBlank(message = "{notEmpty.message}")
-    private String pul;
+    private int pulseRate;
 }

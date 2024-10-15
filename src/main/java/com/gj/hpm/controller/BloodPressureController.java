@@ -3,9 +3,7 @@ package com.gj.hpm.controller;
 import java.io.IOException;
 import java.util.List;
 
-import org.apache.commons.codec.binary.Base64;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -13,10 +11,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.multipart.MultipartFile;
-import org.springframework.web.multipart.MultipartHttpServletRequest;
 
 import com.gj.hpm.config.security.jwt.JwtUtils;
+import com.gj.hpm.dto.request.BaseRequest;
 import com.gj.hpm.dto.request.CreateBloodPressureRequest;
 import com.gj.hpm.dto.request.DeleteBloodPressureByIdRequest;
 import com.gj.hpm.dto.request.DeleteBloodPressureByTokenRequest;
@@ -29,9 +26,7 @@ import com.gj.hpm.dto.request.UpdateBloodPressureByTokenRequest;
 import com.gj.hpm.dto.response.BaseResponse;
 import com.gj.hpm.dto.response.GetBloodPressurePagingResponse;
 import com.gj.hpm.dto.response.GetBloodPressureResponse;
-import com.gj.hpm.service.BloodPressureService;
-
-import jakarta.servlet.http.HttpServletRequest;
+import com.gj.hpm.service.BloodPressureRecordService;
 
 @CrossOrigin(origins = "*", maxAge = 3600)
 @RestController
@@ -39,7 +34,7 @@ import jakarta.servlet.http.HttpServletRequest;
 public class BloodPressureController {
 
     @Autowired
-    private BloodPressureService bloodPressureService;
+    private BloodPressureRecordService bloodPressureService;
 
     @Autowired
     private JwtUtils jwtUtils;
@@ -167,18 +162,12 @@ public class BloodPressureController {
         }
     }
 
-    @PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<?> uploadImage(@RequestHeader("Authorization") String token, HttpServletRequest request)
+    @PostMapping("/upload")
+    public ResponseEntity<?> uploadImage(@RequestHeader("Authorization") String token, BaseRequest request)
             throws IOException {
         try {
-            MultipartFile imageFile = ((MultipartHttpServletRequest) request).getFile("file");
-            byte[] imageByte = new byte[0];
-
-            if (imageFile != null) {
-                imageByte = imageFile.getBytes();
-            }
-
-            BaseResponse response = bloodPressureService.uploadImage(jwtUtils.getIdFromHeader(token),Base64.encodeBase64String(imageByte));
+            BaseResponse response = bloodPressureService.uploadImage(jwtUtils.getIdFromHeader(token),
+                    request.getRequestId());
             return ResponseEntity.ok().body(response);
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());

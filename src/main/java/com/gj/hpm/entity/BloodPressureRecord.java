@@ -17,12 +17,11 @@ import lombok.experimental.SuperBuilder;
 @NoArgsConstructor
 public class BloodPressureRecord extends BaseEntity {
     // blood pressure
-    private String systolicPressure;
-    private String diastolicPressure;
-    private String pulseRate;
+    private int systolicPressure;
+    private int diastolicPressure;
+    private int pulseRate;
 
     // reference to the user who owns the record
     @DBRef
     private User patient;
 }
-

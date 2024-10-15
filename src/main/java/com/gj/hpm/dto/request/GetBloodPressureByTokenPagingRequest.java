@@ -9,9 +9,9 @@ import lombok.Setter;
 @Setter
 @Validated
 public class GetBloodPressureByTokenPagingRequest extends BasePaginationRequest {
-    private String sys;
-    private String dia;
-    private String pul;
+    private int systolicPressure;
+    private int diastolicPressure;
+    private int pulseRate;
     private String createBy;
     private String statusFlag;
 }

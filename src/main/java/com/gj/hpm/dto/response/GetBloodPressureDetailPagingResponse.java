@@ -9,9 +9,9 @@ import lombok.Setter;
 @Setter
 public class GetBloodPressureDetailPagingResponse extends BaseResponse {
     private String id;
-    private String sys;
-    private String dia;
-    private String pul;
+    private int systolicPressure;
+    private int diastolicPressure;
+    private int pulseRate;
     private String statusFlag;
     private DropdownUserResp createBy;
     private LocalDateTime createDate;

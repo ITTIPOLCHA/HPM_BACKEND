@@ -48,16 +48,18 @@ import com.gj.hpm.dto.response.GetBloodPressureResponse;
 import com.gj.hpm.entity.BloodPressureRecord;
 import com.gj.hpm.entity.User;
 import com.gj.hpm.repository.StmUserRepository;
-import com.gj.hpm.repository.StpBloodPressureRepository;
-import com.gj.hpm.service.BloodPressureService;
+import com.gj.hpm.repository.BloodPressureRecordRepository;
+import com.gj.hpm.service.BloodPressureRecordService;
 import com.gj.hpm.util.Constant.ApiReturn;
 import com.gj.hpm.util.Constant.Level;
 import com.gj.hpm.util.Constant.StatusFlag;
 import com.gj.hpm.util.LineUtil;
 import com.gj.hpm.util.MongoUtil;
+import com.gj.hpm.util.ResponseUtil;
+import com.gj.hpm.util.ServiceFailedException;
 
 @Service
-public class BloodPressureServiceImpl implements BloodPressureService {
+public class BloodPressureRecordServiceImpl implements BloodPressureRecordService {
 
         @Value("${hpm.app.token.property}")
         private String token;
@@ -66,7 +68,7 @@ public class BloodPressureServiceImpl implements BloodPressureService {
         private String apiKey;
 
         @Autowired
-        private StpBloodPressureRepository stpBloodPressureRepository;
+        private BloodPressureRecordRepository stpBloodPressureRepository;
 
         @Autowired
         private StmUserRepository stmUserRepository;
@@ -81,84 +83,68 @@ public class BloodPressureServiceImpl implements BloodPressureService {
         @Override
         public BaseResponse createBloodPressure(String id, CreateBloodPressureRequest request) {
                 if (!stmUserRepository.existsById(id))
-                        return new BaseResponse(
-                                        new BaseStatusResponse(ApiReturn.BAD_REQUEST.code(),
-                                                        ApiReturn.BAD_REQUEST.description(),
-                                                        Collections.singletonList(new BaseDetailsResponse("Not Found ❌",
-                                                                        "ไม่พบข้อมูลผู้ใช้งาน"))));
-                if (!stpBloodPressureRepository
-                                .existsByCreateDateAfterAndCreateById(LocalDateTime.now().minusHours(1), id)) {
-                        BloodPressureRecord bloodPressure = new BloodPressureRecord();
-                        bloodPressure.setSystolicPressure(request.getSys());
-                        bloodPressure.setDiastolicPressure(request.getDia());
-                        bloodPressure.setPulseRate(request.getPul());
-                        bloodPressure.setStatusFlag(StatusFlag.ACTIVE.code());
-                        bloodPressure.setCreateBy(User.builder().id(id).build());
-                        bloodPressure.setUpdateBy(User.builder().id(id).build());
-                        stpBloodPressureRepository.save(bloodPressure);
+                        return ResponseUtil.buildBaseResponse(ApiReturn.BAD_REQUEST.code(),
+                                        ApiReturn.BAD_REQUEST.description(), "Not Found ❌",
+                                        "ไม่พบข้อมูลผู้ใช้งาน");
 
-                        User user = stmUserRepository.findById(id).orElse(null);
-                        user.setStatusFlag(StatusFlag.ACTIVE.code());
-                        if (Integer.parseInt(request.getSys()) > 179 || Integer.parseInt(request.getDia()) > 109) {
-                                user.setLevel(Level.DANGER);
-                        } else if (Integer.parseInt(request.getSys()) > 160
-                                        || Integer.parseInt(request.getDia()) > 100) {
-                                user.setLevel(Level.WARNING2);
-                        } else if (Integer.parseInt(request.getSys()) > 139
-                                        || Integer.parseInt(request.getDia()) > 89) {
-                                user.setLevel(Level.WARNING1);
-                        } else {
-                                user.setLevel(Level.NORMAL);
-                                user.setVerified(true);
-                        }
-                        stmUserRepository.save(user);
+                if (stpBloodPressureRepository
+                                .existsByCreateDateAfterAndCreateById(LocalDateTime.now().minusHours(1), id))
+                        return ResponseUtil.buildBaseResponse(ApiReturn.BAD_REQUEST.code(),
+                                        ApiReturn.BAD_REQUEST.description(), "Fail ❌",
+                                        "ข้อมูลความดันโลหิตถูกบันทึกไปแล้ว ใน 1 ชั่วโมงนี้");
 
-                        if (StringUtils.isNotBlank(user.getLineId())) {
-                                if (!new LineUtil().sentMessage(user.getLineId(),
-                                                token, ("บันทึกผลสำเร็จ ✅\n"
-                                                                + "ความดันโลหิตของของคุณ " + user.getFirstName()
-                                                                + " คือ\n"
-                                                                + "Sys : " + request.getSys() + ",\n"
-                                                                + "Dia : " + request.getDia() + ",\n"
-                                                                + "Pul : " + request.getPul())))
-                                        return new BaseResponse(
-                                                        new BaseStatusResponse(
-                                                                        ApiReturn.BAD_REQUEST.code(),
-                                                                        ApiReturn.BAD_REQUEST
-                                                                                        .description(),
-                                                                        Collections
-                                                                                        .singletonList(
-                                                                                                        new BaseDetailsResponse(
-                                                                                                                        "Error ❌",
-                                                                                                                        "ส่งข้อความไม่สำเร็จ."))));
-                        }
+                BloodPressureRecord bloodPressure = new BloodPressureRecord();
+                bloodPressure.setSystolicPressure(request.getSystolicPressure());
+                bloodPressure.setDiastolicPressure(request.getDiastolicPressure());
+                bloodPressure.setPulseRate(request.getPulseRate());
+                bloodPressure.setStatusFlag(StatusFlag.ACTIVE.code());
+                bloodPressure.setCreateBy(User.builder().id(id).build());
+                bloodPressure.setUpdateBy(User.builder().id(id).build());
+                stpBloodPressureRepository.save(bloodPressure);
 
-                        return new BaseResponse(
-                                        new BaseStatusResponse(ApiReturn.SUCCESS.code(),
-                                                        ApiReturn.SUCCESS.description(),
-                                                        Collections.singletonList(
-                                                                        new BaseDetailsResponse("Success ✅",
-                                                                                        "บันทึกข้อมูลความดันโลหิตสำเร็จ"))));
+                User user = stmUserRepository.findById(id).orElse(null);
+                user.setStatusFlag(StatusFlag.ACTIVE.code());
+                if (request.getSystolicPressure() > 179 || request.getDiastolicPressure() > 109) {
+                        user.setLevel(Level.DANGER);
+                } else if (request.getSystolicPressure() > 160
+                                || request.getDiastolicPressure() > 100) {
+                        user.setLevel(Level.WARNING2);
+                } else if (request.getSystolicPressure() > 139
+                                || request.getDiastolicPressure() > 89) {
+                        user.setLevel(Level.WARNING1);
+                } else {
+                        user.setLevel(Level.NORMAL);
+                        user.setVerified(true);
                 }
-                return new BaseResponse(new BaseStatusResponse(ApiReturn.BAD_REQUEST.code(),
-                                ApiReturn.BAD_REQUEST.description(),
-                                Collections.singletonList(
-                                                new BaseDetailsResponse("Fail ❌",
-                                                                "ข้อมูลความดันโลหิตถูกบันทึกไปแล้ว ใน 1 ชั่วโมงนี้"))));
+                stmUserRepository.save(user);
+
+                if (StringUtils.isNotBlank(user.getLineId())) {
+                        if (!new LineUtil().sentMessage(user.getLineId(),
+                                        token, ("บันทึกผลสำเร็จ ✅\n"
+                                                        + "ความดันโลหิตของของคุณ " + user.getFirstName()
+                                                        + " คือ\n"
+                                                        + "Sys : " + request.getSystolicPressure() + ",\n"
+                                                        + "Dia : " + request.getDiastolicPressure() + ",\n"
+                                                        + "Pul : " + request.getPulseRate())))
+                                return ResponseUtil.buildBaseResponse(
+                                                ApiReturn.BAD_REQUEST.code(),
+                                                ApiReturn.BAD_REQUEST.description(), "Error ❌", "ส่งข้อความไม่สำเร็จ.");
+                }
+
+                return ResponseUtil.buildBaseResponse(ApiReturn.SUCCESS.code(), ApiReturn.SUCCESS.description(),
+                                "Success ✅", "บันทึกข้อมูลความดันโลหิตสำเร็จ");
         }
 
         @Transactional
         @Override
         public GetBloodPressureResponse getBloodPressureById(GetBloodPressureRequest request) {
                 GetBloodPressureResponse response = stpBloodPressureRepository
-                                .findByIdGetBloodPressureResp(request.getBloodPressureId()).orElse(null);
+                                .findByIdGetBloodPressureResp(request.getBloodPressureId()).orElseThrow();
                 if (response != null)
                         return response;
                 response = new GetBloodPressureResponse();
-                response.setStatus(new BaseStatusResponse(ApiReturn.BAD_REQUEST.code(),
-                                ApiReturn.BAD_REQUEST.description(),
-                                Collections.singletonList(
-                                                new BaseDetailsResponse("Not Found ❌", "ไม่พบข้อมูลความดันโลหิต"))));
+                response.setStatus(ResponseUtil.buildBaseStatusResponse(ApiReturn.BAD_REQUEST.code(),
+                                ApiReturn.BAD_REQUEST.description(), "Not Found ❌", "ไม่พบข้อมูลความดันโลหิต"));
                 return response;
         }
 
@@ -170,10 +156,8 @@ public class BloodPressureServiceImpl implements BloodPressureService {
                 if (!response.isEmpty())
                         return response;
                 GetBloodPressureResponse resp = new GetBloodPressureResponse();
-                resp.setStatus(new BaseStatusResponse(ApiReturn.BAD_REQUEST.code(),
-                                ApiReturn.BAD_REQUEST.description(),
-                                Collections.singletonList(
-                                                new BaseDetailsResponse("Not Found ❌", "ไม่พบข้อมูลความดันโลหิต"))));
+                resp.setStatus(ResponseUtil.buildBaseStatusResponse(ApiReturn.BAD_REQUEST.code(),
+                                ApiReturn.BAD_REQUEST.description(), "Not Found ❌", "ไม่พบข้อมูลความดันโลหิต"));
                 response.add(resp);
                 return response;
         }
@@ -186,10 +170,8 @@ public class BloodPressureServiceImpl implements BloodPressureService {
                 if (response != null)
                         return response;
                 response = new GetBloodPressureResponse();
-                response.setStatus(new BaseStatusResponse(ApiReturn.BAD_REQUEST.code(),
-                                ApiReturn.BAD_REQUEST.description(),
-                                Collections.singletonList(
-                                                new BaseDetailsResponse("Not Found ❌", "พบข้อมูลความดันโลหิต"))));
+                response.setStatus(ResponseUtil.buildBaseStatusResponse(ApiReturn.BAD_REQUEST.code(),
+                                ApiReturn.BAD_REQUEST.description(), "Not Found ❌", "ไม่พบข้อมูลความดันโลหิต"));
                 return response;
         }
 
@@ -223,9 +205,9 @@ public class BloodPressureServiceImpl implements BloodPressureService {
 
         private Criteria setCriteria(GetBloodPressurePagingRequest request) {
                 Criteria criteria = new Criteria();
-                addCriteriaIfNotEmpty(criteria, "sys", request.getSys());
-                addCriteriaIfNotEmpty(criteria, "dia", request.getDia());
-                addCriteriaIfNotEmpty(criteria, "pul", request.getPul());
+                addCriteriaIfNotEmpty(criteria, "sys", request.getSystolicPressure());
+                addCriteriaIfNotEmpty(criteria, "dia", request.getDiastolicPressure());
+                addCriteriaIfNotEmpty(criteria, "pul", request.getPulseRate());
                 addCriteriaIfNotEmpty(criteria, "statusFlag", request.getStatusFlag());
                 if (StringUtils.isNotEmpty(request.getCreateBy()))
                         criteria.and("createBy.$id").is(new ObjectId(request.getCreateBy()));
@@ -265,16 +247,21 @@ public class BloodPressureServiceImpl implements BloodPressureService {
         private Criteria setCriteriaFromToken(String id, GetBloodPressureByTokenPagingRequest request) {
                 Criteria criteria = new Criteria();
                 criteria.and("createBy.$id").is(new ObjectId(id));
-                addCriteriaIfNotEmpty(criteria, "sys", request.getSys());
-                addCriteriaIfNotEmpty(criteria, "dia", request.getDia());
-                addCriteriaIfNotEmpty(criteria, "pul", request.getPul());
+                addCriteriaIfNotEmpty(criteria, "sys", request.getSystolicPressure());
+                addCriteriaIfNotEmpty(criteria, "dia", request.getDiastolicPressure());
+                addCriteriaIfNotEmpty(criteria, "pul", request.getPulseRate());
                 addCriteriaIfNotEmpty(criteria, "statusFlag", request.getStatusFlag());
                 return criteria;
         }
 
-        private void addCriteriaIfNotEmpty(Criteria criteria, String field, String value) {
-                if (StringUtils.isNotEmpty(value))
-                        criteria.and(field).regex(".*" + value + ".*");
+        private void addCriteriaIfNotEmpty(Criteria criteria, String field, Object value) {
+                if (value != null) {
+                        if (value instanceof String && StringUtils.isNotBlank((String) value)) {
+                                criteria.and(field).regex(".*" + value + ".*", "i");
+                        } else if (value instanceof Integer) {
+                                criteria.and(field).is(value);
+                        }
+                }
         }
 
         @Transactional
@@ -282,24 +269,18 @@ public class BloodPressureServiceImpl implements BloodPressureService {
         public BaseResponse updateBloodPressureById(UpdateBloodPressureByIdRequest request) {
                 BloodPressureRecord bloodPressure = stpBloodPressureRepository
                                 .findById(request.getBloodPressureId()).orElse(null);
-                if (bloodPressure != null) {
-                        bloodPressure.setSystolicPressure(request.getSys());
-                        bloodPressure.setDiastolicPressure(request.getDia());
-                        bloodPressure.setPulseRate(request.getPul());
-                        bloodPressure.setCreateBy(User.builder().id(request.getUserId()).build());
-                        bloodPressure.setUpdateBy(User.builder().id(request.getActionId()).build());
-                        stpBloodPressureRepository.save(bloodPressure);
-                        return new BaseResponse(
-                                        new BaseStatusResponse(ApiReturn.SUCCESS.code(),
-                                                        ApiReturn.SUCCESS.description(),
-                                                        Collections.singletonList(
-                                                                        new BaseDetailsResponse("Success ✅",
-                                                                                        "อัพเดทข้อมูลความดันโลหิตสำเร็จ"))));
-                }
-                return new BaseResponse(new BaseStatusResponse(ApiReturn.BAD_REQUEST.code(),
-                                ApiReturn.BAD_REQUEST.description(),
-                                Collections.singletonList(
-                                                new BaseDetailsResponse("Not Found ❌", "ไม่พบข้อมูลความดันโลหิต"))));
+                if (bloodPressure == null)
+                        return ResponseUtil.buildBaseResponse(ApiReturn.BAD_REQUEST.code(),
+                                        ApiReturn.BAD_REQUEST.description(), "Not Found ❌", "ไม่พบข้อมูลความดันโลหิต");
+
+                bloodPressure.setSystolicPressure(request.getSystolicPressure());
+                bloodPressure.setDiastolicPressure(request.getDiastolicPressure());
+                bloodPressure.setPulseRate(request.getPulseRate());
+                bloodPressure.setCreateBy(User.builder().id(request.getUserId()).build());
+                bloodPressure.setUpdateBy(User.builder().id(request.getActionId()).build());
+                stpBloodPressureRepository.save(bloodPressure);
+                return ResponseUtil.buildBaseResponse(ApiReturn.SUCCESS.code(), ApiReturn.SUCCESS.description(),
+                                "Success ✅", "อัพเดทข้อมูลความดันโลหิตสำเร็จ");
         }
 
         @Override
@@ -307,9 +288,9 @@ public class BloodPressureServiceImpl implements BloodPressureService {
                 BloodPressureRecord bloodPressure = stpBloodPressureRepository
                                 .findByIdAndCreateBy_Id(request.getBloodPressureId(), id).orElse(null);
                 if (bloodPressure != null) {
-                        bloodPressure.setSystolicPressure(request.getSys());
-                        bloodPressure.setDiastolicPressure(request.getDia());
-                        bloodPressure.setPulseRate(request.getPul());
+                        bloodPressure.setSystolicPressure(request.getSystolicPressure());
+                        bloodPressure.setDiastolicPressure(request.getDiastolicPressure());
+                        bloodPressure.setPulseRate(request.getPulseRate());
                         bloodPressure.setUpdateBy(User.builder().id(id).build());
                         stpBloodPressureRepository.save(bloodPressure);
                         return new BaseResponse(
@@ -411,15 +392,15 @@ public class BloodPressureServiceImpl implements BloodPressureService {
                                         String jsonString = result.substring(result.indexOf("{"));
                                         ObjectMapper objectMapper = new ObjectMapper();
                                         JsonNode rootNode = objectMapper.readTree(jsonString);
- 
+
                                         int sys = rootNode.get("sys").asInt();
                                         int dia = rootNode.get("dia").asInt();
                                         int pul = rootNode.get("pul").asInt();
                                         CreateBloodPressureRequest bloodPressureRequest = new CreateBloodPressureRequest();
-                                        bloodPressureRequest.setSys(sys+"");
-                                        bloodPressureRequest.setDia(dia+"");
-                                        bloodPressureRequest.setPul(pul+"");
-                                        return createBloodPressure(id,bloodPressureRequest);
+                                        bloodPressureRequest.setSystolicPressure(sys);
+                                        bloodPressureRequest.setDiastolicPressure(dia);
+                                        bloodPressureRequest.setPulseRate(pul);
+                                        return createBloodPressure(id, bloodPressureRequest);
                                 }
                         } catch (Exception e) {
                                 e.printStackTrace();

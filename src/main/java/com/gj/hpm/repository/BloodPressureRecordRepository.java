@@ -12,7 +12,7 @@ import com.gj.hpm.dto.response.GetBloodPressureCurrentResponse;
 import com.gj.hpm.dto.response.GetBloodPressureResponse;
 import com.gj.hpm.entity.BloodPressureRecord;
 
-public interface StpBloodPressureRepository extends MongoRepository<BloodPressureRecord, String> {
+public interface BloodPressureRecordRepository extends MongoRepository<BloodPressureRecord, String> {
 
     @Query("{ '_id': ?0 }")
     Optional<GetBloodPressureResponse> findByIdGetBloodPressureResp(String id);

@@ -15,7 +15,7 @@ import com.gj.hpm.dto.response.BaseResponse;
 import com.gj.hpm.dto.response.GetBloodPressurePagingResponse;
 import com.gj.hpm.dto.response.GetBloodPressureResponse;
 
-public interface BloodPressureService {
+public interface BloodPressureRecordService {
     BaseResponse createBloodPressure(String id, CreateBloodPressureRequest request);
 
     GetBloodPressureResponse getBloodPressureById(GetBloodPressureRequest request);
