@@ -163,7 +163,7 @@ public class BloodPressureController {
     }
 
     @PostMapping("/upload")
-    public ResponseEntity<?> uploadImage(@RequestHeader("Authorization") String token, BaseRequest request)
+    public ResponseEntity<?> uploadImage(@RequestHeader("Authorization") String token,@RequestBody BaseRequest request)
             throws IOException {
         try {
             BaseResponse response = bloodPressureService.uploadImage(jwtUtils.getIdFromHeader(token),

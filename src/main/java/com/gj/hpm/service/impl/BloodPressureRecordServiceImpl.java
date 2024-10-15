@@ -47,8 +47,8 @@ import com.gj.hpm.dto.response.GetBloodPressurePagingResponse;
 import com.gj.hpm.dto.response.GetBloodPressureResponse;
 import com.gj.hpm.entity.BloodPressureRecord;
 import com.gj.hpm.entity.User;
-import com.gj.hpm.repository.StmUserRepository;
 import com.gj.hpm.repository.BloodPressureRecordRepository;
+import com.gj.hpm.repository.StmUserRepository;
 import com.gj.hpm.service.BloodPressureRecordService;
 import com.gj.hpm.util.Constant.ApiReturn;
 import com.gj.hpm.util.Constant.Level;
@@ -56,7 +56,6 @@ import com.gj.hpm.util.Constant.StatusFlag;
 import com.gj.hpm.util.LineUtil;
 import com.gj.hpm.util.MongoUtil;
 import com.gj.hpm.util.ResponseUtil;
-import com.gj.hpm.util.ServiceFailedException;
 
 @Service
 public class BloodPressureRecordServiceImpl implements BloodPressureRecordService {
