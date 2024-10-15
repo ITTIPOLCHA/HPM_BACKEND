@@ -405,10 +405,8 @@ public class BloodPressureRecordServiceImpl implements BloodPressureRecordServic
                                 e.printStackTrace();
                         }
                 }
-                return new BaseResponse(new BaseStatusResponse(ApiReturn.BAD_REQUEST.code(),
-                                ApiReturn.BAD_REQUEST.description(),
-                                Collections.singletonList(
-                                                new BaseDetailsResponse("Fail ❌",
-                                                                "ข้อมูลความดันโลหิตถูกบันทึกไปแล้ว ใน 1 ชั่วโมงนี้"))));
+                return ResponseUtil.buildBaseResponse(ApiReturn.BAD_REQUEST.code(),
+                                ApiReturn.BAD_REQUEST.description(), "Fail ❌",
+                                "ข้อมูลความดันโลหิตถูกบันทึกไปแล้ว ใน 1 ชั่วโมงนี้");
         }
 }
