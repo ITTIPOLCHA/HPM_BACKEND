@@ -368,7 +368,7 @@ public class BloodPressureRecordServiceImpl implements BloodPressureRecordServic
                         Map<String, Object> imageContent = new HashMap<>();
                         imageContent.put("type", "image_url");
                         imageContent.put("image_url",
-                                        Map.of("detail", "low", "url", "data:image/png;base64," + base64Image));
+                                        Map.of("detail", "low", "url", base64Image));
 
                         userMessage.put("content", new Object[] { content, imageContent });
                         payload.put("messages", new Object[] { userMessage });
@@ -392,9 +392,9 @@ public class BloodPressureRecordServiceImpl implements BloodPressureRecordServic
                                         ObjectMapper objectMapper = new ObjectMapper();
                                         JsonNode rootNode = objectMapper.readTree(jsonString);
 
-                                        int sys = rootNode.get("sys").asInt();
-                                        int dia = rootNode.get("dia").asInt();
-                                        int pul = rootNode.get("pul").asInt();
+                                        int sys = rootNode.get("systolic").asInt();
+                                        int dia = rootNode.get("diastolic").asInt();
+                                        int pul = rootNode.get("pulse").asInt();
                                         CreateBloodPressureRequest bloodPressureRequest = new CreateBloodPressureRequest();
                                         bloodPressureRequest.setSystolicPressure(sys);
                                         bloodPressureRequest.setDiastolicPressure(dia);
