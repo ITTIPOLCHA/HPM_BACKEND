@@ -81,11 +81,12 @@ public class BloodPressureRecordServiceImpl implements BloodPressureRecordServic
         @Transactional
         @Override
         public BaseResponse createBloodPressure(String id, CreateBloodPressureRequest request) {
+                // Can't find it user.
                 if (!stmUserRepository.existsById(id))
                         return ResponseUtil.buildBaseResponse(ApiReturn.BAD_REQUEST.code(),
                                         ApiReturn.BAD_REQUEST.description(), "Not Found ❌",
                                         "ไม่พบข้อมูลผู้ใช้งาน");
-
+                // Created 1 hour ago.
                 if (stpBloodPressureRepository
                                 .existsByCreateDateAfterAndCreateById(LocalDateTime.now().minusHours(1), id))
                         return ResponseUtil.buildBaseResponse(ApiReturn.BAD_REQUEST.code(),
@@ -96,6 +97,7 @@ public class BloodPressureRecordServiceImpl implements BloodPressureRecordServic
                 bloodPressure.setSystolicPressure(request.getSystolicPressure());
                 bloodPressure.setDiastolicPressure(request.getDiastolicPressure());
                 bloodPressure.setPulseRate(request.getPulseRate());
+                bloodPressure.setPatient(User.builder().id(id).build());
                 bloodPressure.setStatusFlag(StatusFlag.ACTIVE.code());
                 bloodPressure.setCreateBy(User.builder().id(id).build());
                 bloodPressure.setUpdateBy(User.builder().id(id).build());
@@ -363,7 +365,7 @@ public class BloodPressureRecordServiceImpl implements BloodPressureRecordServic
 
                         Map<String, Object> content = new HashMap<>();
                         content.put("type", "text");
-                        content.put("text", "sys, dia, pul require json from only.");
+                        content.put("text", "systolic, diastolic, pulse require json from only.");
 
                         Map<String, Object> imageContent = new HashMap<>();
                         imageContent.put("type", "image_url");

@@ -52,6 +52,18 @@ public class BloodPressureController {
         }
     }
 
+    @PostMapping("/upload")
+    public ResponseEntity<?> uploadImage(@RequestHeader("Authorization") String token,@RequestBody BaseRequest request)
+            throws IOException {
+        try {
+            BaseResponse response = bloodPressureService.uploadImage(jwtUtils.getIdFromHeader(token),
+                    request.getRequestId());
+            return ResponseEntity.ok().body(response);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
     // ! R
     // ? Get By Id
     @PostMapping("/a/getBloodPressureById")
@@ -156,18 +168,6 @@ public class BloodPressureController {
         try {
             BaseResponse response = bloodPressureService.deleteBloodPressureByToken(jwtUtils.getIdFromHeader(token),
                     request);
-            return ResponseEntity.ok().body(response);
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
-        }
-    }
-
-    @PostMapping("/upload")
-    public ResponseEntity<?> uploadImage(@RequestHeader("Authorization") String token,@RequestBody BaseRequest request)
-            throws IOException {
-        try {
-            BaseResponse response = bloodPressureService.uploadImage(jwtUtils.getIdFromHeader(token),
-                    request.getRequestId());
             return ResponseEntity.ok().body(response);
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());

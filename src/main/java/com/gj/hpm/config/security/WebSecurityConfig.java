@@ -58,7 +58,7 @@ public class WebSecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> {
                     auth.requestMatchers("/v1/system/**", "/v3/api-docs", "/v1/system/forgotPassword", "/v1/test/**",
-                            "/v1/user/u/**", "/v1/bp/u/**", "/v1/bp/createBloodPressure").permitAll()
+                            "/v1/user/u/**", "/v1/bp/u/**", "/v1/bp/createBloodPressure","/swagger-ui/index.html").permitAll()
                             .requestMatchers("/v1/user/a/**", "/v1/bp/a/**", "/v1/dropdown/**").hasRole("ADMIN")
                             .anyRequest()
                             .authenticated();

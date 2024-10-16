@@ -208,7 +208,7 @@ public class UserServiceImpl implements UserService {
                                                 "เปลี่ยน Rich menu ไม่ได้.");
                         if (!new LineUtil().sentMessage(user.getLineId(),
                                         token, ("ระบบได้บันทึกข้อมูลของ " + request.getFirstName()
-                                                        + " เรียบร้อยแล้ว✅ ท่านสามารถเลือกเมนู “ดูประวัติ” เพื่อดูประวัติการส่งผลวัดความดันโลหิต หรือ เลือกเมนู “ส่งผลวัด” เพื่อส่งผลวัดความดันโลหิตได้เลยครับ")))
+                                                        + " เรียบร้อยแล้ว✅ ท่านสามารถเลือกเมนู \nดูประวัติ เพื่อดูประวัติการส่งผลวัดความดันโลหิต หรือ \nส่งผลวัด เพื่อส่งผลวัดความดันโลหิตได้เลยครับ")))
                                 return ResponseUtil.buildBaseResponse(ApiReturn.BAD_REQUEST.code(),
                                                 ApiReturn.BAD_REQUEST.description(),
                                                 "เกิดข้อผิดพลาด ❌",

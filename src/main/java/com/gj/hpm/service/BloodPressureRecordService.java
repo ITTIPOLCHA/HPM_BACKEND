@@ -18,6 +18,8 @@ import com.gj.hpm.dto.response.GetBloodPressureResponse;
 public interface BloodPressureRecordService {
     BaseResponse createBloodPressure(String id, CreateBloodPressureRequest request);
 
+    BaseResponse uploadImage(String id, String base64Image);
+
     GetBloodPressureResponse getBloodPressureById(GetBloodPressureRequest request);
 
     List<GetBloodPressureResponse> getBloodPressureByCreateBy(GetBloodPressureCreateByRequest request);
@@ -36,7 +38,5 @@ public interface BloodPressureRecordService {
     BaseResponse deleteBloodPressureById(DeleteBloodPressureByIdRequest request);
 
     BaseResponse deleteBloodPressureByToken(String id, DeleteBloodPressureByTokenRequest request);
-
-    BaseResponse uploadImage(String id, String base64Image);
 
 }
