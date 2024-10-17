@@ -123,6 +123,9 @@ public class JwtUtils {
 
   public JwtClaimsDTO decodeJwtClaimsDTO(String jwt) {
     try {
+      if (jwt.startsWith("Bearer ")) {
+        jwt = jwt.substring(7);
+      }
       SignedJWT signedJWT = SignedJWT.parse(jwt);
       JWTClaimsSet claimsSet = signedJWT.getJWTClaimsSet();
 
