@@ -44,7 +44,7 @@ public class BloodPressureController {
     public ResponseEntity<?> createBloodPressure(@RequestHeader("Authorization") String token,
             @RequestBody CreateBloodPressureRequest request) {
         try {
-            BaseResponse response = bloodPressureService.createBloodPressure(jwtUtils.getIdFromHeader(token),
+            BaseResponse response = bloodPressureService.createBloodPressure(jwtUtils.decodeJwtClaimsDTO(token),
                     request);
             return ResponseEntity.ok().body(response);
         } catch (Exception e) {
@@ -56,7 +56,7 @@ public class BloodPressureController {
     public ResponseEntity<?> uploadImage(@RequestHeader("Authorization") String token,@RequestBody BaseRequest request)
             throws IOException {
         try {
-            BaseResponse response = bloodPressureService.uploadImage(jwtUtils.getIdFromHeader(token),
+            BaseResponse response = bloodPressureService.uploadImage(jwtUtils.decodeJwtClaimsDTO(token),
                     request.getRequestId());
             return ResponseEntity.ok().body(response);
         } catch (Exception e) {

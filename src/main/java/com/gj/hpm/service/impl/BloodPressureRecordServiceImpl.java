@@ -20,6 +20,7 @@ import org.springframework.data.mongodb.core.aggregation.Aggregation;
 import org.springframework.data.mongodb.core.aggregation.AggregationResults;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -45,6 +46,7 @@ import com.gj.hpm.dto.response.BaseStatusResponse;
 import com.gj.hpm.dto.response.GetBloodPressureDetailPagingResponse;
 import com.gj.hpm.dto.response.GetBloodPressurePagingResponse;
 import com.gj.hpm.dto.response.GetBloodPressureResponse;
+import com.gj.hpm.dto.response.JwtClaimsDTO;
 import com.gj.hpm.entity.BloodPressureRecord;
 import com.gj.hpm.entity.User;
 import com.gj.hpm.repository.BloodPressureRecordRepository;
@@ -58,6 +60,7 @@ import com.gj.hpm.util.MongoUtil;
 import com.gj.hpm.util.ResponseUtil;
 
 @Service
+@Transactional
 public class BloodPressureRecordServiceImpl implements BloodPressureRecordService {
 
         @Value("${hpm.app.token.property}")
@@ -65,6 +68,9 @@ public class BloodPressureRecordServiceImpl implements BloodPressureRecordServic
 
         @Value("${hpm.app.api.key}")
         private String apiKey;
+
+        @Value("${hpm.app.gpt.url}")
+        private String apiUrl;
 
         @Autowired
         private BloodPressureRecordRepository stpBloodPressureRepository;
@@ -78,17 +84,17 @@ public class BloodPressureRecordServiceImpl implements BloodPressureRecordServic
         @Autowired
         private RestTemplate restTemplate;
 
-        @Transactional
         @Override
-        public BaseResponse createBloodPressure(String id, CreateBloodPressureRequest request) {
+        public BaseResponse createBloodPressure(JwtClaimsDTO dto, CreateBloodPressureRequest request) {
                 // Can't find it user.
-                if (!stmUserRepository.existsById(id))
+                if (!stmUserRepository.existsById(dto.getJwtId()))
                         return ResponseUtil.buildBaseResponse(ApiReturn.BAD_REQUEST.code(),
                                         ApiReturn.BAD_REQUEST.description(), "Not Found ❌",
                                         "ไม่พบข้อมูลผู้ใช้งาน");
                 // Created 1 hour ago.
                 if (stpBloodPressureRepository
-                                .existsByCreateDateAfterAndCreateById(LocalDateTime.now().minusHours(1), id))
+                                .existsByCreateDateAfterAndCreateById(LocalDateTime.now().minusHours(1),
+                                                dto.getJwtId()))
                         return ResponseUtil.buildBaseResponse(ApiReturn.BAD_REQUEST.code(),
                                         ApiReturn.BAD_REQUEST.description(), "Fail ❌",
                                         "ข้อมูลความดันโลหิตถูกบันทึกไปแล้ว ใน 1 ชั่วโมงนี้");
@@ -97,47 +103,114 @@ public class BloodPressureRecordServiceImpl implements BloodPressureRecordServic
                 bloodPressure.setSystolicPressure(request.getSystolicPressure());
                 bloodPressure.setDiastolicPressure(request.getDiastolicPressure());
                 bloodPressure.setPulseRate(request.getPulseRate());
-                bloodPressure.setPatient(User.builder().id(id).build());
+                bloodPressure.setPatient(User.builder().id(dto.getJwtId()).build());
+                bloodPressure.setCreateBy(User.builder().id(dto.getJwtId()).build());
                 bloodPressure.setStatusFlag(StatusFlag.ACTIVE.code());
-                bloodPressure.setCreateBy(User.builder().id(id).build());
-                bloodPressure.setUpdateBy(User.builder().id(id).build());
                 stpBloodPressureRepository.save(bloodPressure);
 
-                User user = stmUserRepository.findById(id).orElse(null);
-                user.setStatusFlag(StatusFlag.ACTIVE.code());
-                if (request.getSystolicPressure() > 179 || request.getDiastolicPressure() > 109) {
-                        user.setLevel(Level.DANGER);
-                } else if (request.getSystolicPressure() > 160
-                                || request.getDiastolicPressure() > 100) {
-                        user.setLevel(Level.WARNING2);
-                } else if (request.getSystolicPressure() > 139
-                                || request.getDiastolicPressure() > 89) {
-                        user.setLevel(Level.WARNING1);
+                Update update = new Update();
+                String msg = new String();
+                update.set("statusFlag", StatusFlag.ACTIVE.code());
+                if (request.getSystolicPressure() > 175 || request.getDiastolicPressure() > 105) {
+                        update.set("level", Level.DANGER);
+                        msg = "ระดับ ความดันโลหิตสูงระยะรุนแรง คำแนะนำ รีบพบแพทย์โดยด่วน";
+                } else if (request.getSystolicPressure() > 155
+                                || request.getDiastolicPressure() > 95) {
+                        update.set("level", Level.WARNING2);
+                        msg = "ระดับ ความดันโลหิตสูงระยะเริ่มแรก คำแนะนำ พบแพทย์เพื่อวินิจฉัย";
+                } else if (request.getSystolicPressure() > 135
+                                || request.getDiastolicPressure() > 85) {
+                        update.set("level", Level.WARNING1);
+                        msg = "ระดับ ความดันโลหิตสูงกว่าปกติ คำแนะนำ ปรึกษาแพทย์";
                 } else {
-                        user.setLevel(Level.NORMAL);
-                        user.setVerified(true);
+                        update.set("level", Level.NORMAL);
+                        update.set("verified", true);
+                        msg = "ระดับ ปกคิ คำแนะนำ ควบคุมอาหาร, ออกกำลังกาย, วัดความดันอยู่เสมอ";
                 }
-                stmUserRepository.save(user);
+                mongoTemplate.updateFirst(new Query(Criteria.where("id").is(dto.getJwtId())), update, User.class,
+                                "user");
 
-                if (StringUtils.isNotBlank(user.getLineId())) {
-                        if (!new LineUtil().sentMessage(user.getLineId(),
-                                        token, ("บันทึกผลสำเร็จ ✅\n"
-                                                        + "ความดันโลหิตของของคุณ " + user.getFirstName()
-                                                        + " คือ\n"
-                                                        + "Sys : " + request.getSystolicPressure() + ",\n"
-                                                        + "Dia : " + request.getDiastolicPressure() + ",\n"
-                                                        + "Pul : " + request.getPulseRate())))
-                                return ResponseUtil.buildBaseResponse(
-                                                ApiReturn.BAD_REQUEST.code(),
-                                                ApiReturn.BAD_REQUEST.description(), "Error ❌", "ส่งข้อความไม่สำเร็จ.");
-                }
+                if (!new LineUtil().sentMessage(dto.getLineId(),
+                                token, ("บันทึกผลสำเร็จ ✅\n"
+                                                + "ความดันโลหิตของของคุณ " + dto.getName()
+                                                + " คือ\n"
+                                                + "Sys : " + request.getSystolicPressure() + ",\n"
+                                                + "Dia : " + request.getDiastolicPressure() + ",\n"
+                                                + "Pul : " + request.getPulseRate() + "\n " + msg)))
+                        return ResponseUtil.buildBaseResponse(
+                                        ApiReturn.BAD_REQUEST.code(),
+                                        ApiReturn.BAD_REQUEST.description(), "Error ❌", "ส่งข้อความไม่สำเร็จ.");
 
                 return ResponseUtil.buildBaseResponse(ApiReturn.SUCCESS.code(), ApiReturn.SUCCESS.description(),
                                 "Success ✅", "บันทึกข้อมูลความดันโลหิตสำเร็จ");
         }
 
-        @Transactional
         @Override
+        public BaseResponse uploadImage(JwtClaimsDTO dto, String base64Image) {
+                if (!stpBloodPressureRepository
+                                .existsByCreateDateAfterAndCreateById(LocalDateTime.now().minusHours(1),
+                                                dto.getJwtId())) {
+                        // Set up headers
+                        HttpHeaders headers = new HttpHeaders();
+                        headers.setContentType(MediaType.APPLICATION_JSON);
+                        headers.setBearerAuth(apiKey);
+
+                        // Create the payload
+                        Map<String, Object> payload = new HashMap<>();
+                        payload.put("model", "gpt-4o");
+
+                        Map<String, Object> userMessage = new HashMap<>();
+                        userMessage.put("role", "user");
+
+                        Map<String, Object> content = new HashMap<>();
+                        content.put("type", "text");
+                        content.put("text", "systolic, diastolic, pulse require json from only.");
+
+                        Map<String, Object> imageContent = new HashMap<>();
+                        imageContent.put("type", "image_url");
+                        imageContent.put("image_url",
+                                        Map.of("detail", "low", "url", base64Image));
+
+                        userMessage.put("content", new Object[] { content, imageContent });
+                        payload.put("messages", new Object[] { userMessage });
+
+                        // Prepare the request entity
+                        HttpEntity<Map<String, Object>> requestEntity = new HttpEntity<>(payload, headers);
+
+                        try {
+                                @SuppressWarnings("unchecked")
+                                Map<String, Object> response = restTemplate
+                                                .exchange(apiUrl, HttpMethod.POST, requestEntity, Map.class).getBody();
+
+                                // Extract and return the response
+                                if (response != null && response.containsKey("choices")) {
+                                        @SuppressWarnings("unchecked")
+                                        String result = (String) ((Map<String, Object>) ((List<Map<String, Object>>) response
+                                                        .get("choices")).get(0).get("message")).get("content");
+                                        String jsonString = result.substring(result.indexOf("{"));
+                                        ObjectMapper objectMapper = new ObjectMapper();
+                                        JsonNode rootNode = objectMapper.readTree(jsonString);
+
+                                        int sys = rootNode.get("systolic").asInt();
+                                        int dia = rootNode.get("diastolic").asInt();
+                                        int pul = rootNode.get("pulse").asInt();
+                                        CreateBloodPressureRequest bloodPressureRequest = new CreateBloodPressureRequest();
+                                        bloodPressureRequest.setSystolicPressure(sys);
+                                        bloodPressureRequest.setDiastolicPressure(dia);
+                                        bloodPressureRequest.setPulseRate(pul);
+                                        return createBloodPressure(dto, bloodPressureRequest);
+                                }
+                        } catch (Exception e) {
+                                e.printStackTrace();
+                        }
+                }
+                return ResponseUtil.buildBaseResponse(ApiReturn.BAD_REQUEST.code(),
+                                ApiReturn.BAD_REQUEST.description(), "Fail ❌",
+                                "ข้อมูลความดันโลหิตถูกบันทึกไปแล้ว ใน 1 ชั่วโมงนี้");
+        }
+
+        @Override
+        @Transactional(readOnly = true)
         public GetBloodPressureResponse getBloodPressureById(GetBloodPressureRequest request) {
                 GetBloodPressureResponse response = stpBloodPressureRepository
                                 .findByIdGetBloodPressureResp(request.getBloodPressureId()).orElseThrow();
@@ -149,8 +222,8 @@ public class BloodPressureRecordServiceImpl implements BloodPressureRecordServic
                 return response;
         }
 
-        @Transactional
         @Override
+        @Transactional(readOnly = true)
         public List<GetBloodPressureResponse> getBloodPressureByCreateBy(GetBloodPressureCreateByRequest request) {
                 List<GetBloodPressureResponse> response = stpBloodPressureRepository
                                 .findByCreateBy_Id(request.getUserId());
@@ -163,8 +236,8 @@ public class BloodPressureRecordServiceImpl implements BloodPressureRecordServic
                 return response;
         }
 
-        @Transactional
         @Override
+        @Transactional(readOnly = true)
         public GetBloodPressureResponse getBloodPressureByToken(String id, GetBloodPressureRequest request) {
                 GetBloodPressureResponse response = stpBloodPressureRepository
                                 .findByIdAndCreateById(request.getBloodPressureId(), id).orElse(null);
@@ -176,8 +249,8 @@ public class BloodPressureRecordServiceImpl implements BloodPressureRecordServic
                 return response;
         }
 
-        @Transactional
         @Override
+        @Transactional(readOnly = true)
         public GetBloodPressurePagingResponse getBloodPressurePaging(GetBloodPressurePagingRequest request) {
                 Page<GetBloodPressureDetailPagingResponse> bpPage = findByAggregation(request);
                 GetBloodPressurePagingResponse response = new GetBloodPressurePagingResponse();
@@ -215,8 +288,8 @@ public class BloodPressureRecordServiceImpl implements BloodPressureRecordServic
                 return criteria;
         }
 
-        @Transactional
         @Override
+        @Transactional(readOnly = true)
         public GetBloodPressurePagingResponse getBloodPressurePagingByUserId(String id,
                         GetBloodPressureByTokenPagingRequest request) {
                 Page<GetBloodPressureDetailPagingResponse> bpPage = findByAggregationFromToken(id, request);
@@ -265,7 +338,6 @@ public class BloodPressureRecordServiceImpl implements BloodPressureRecordServic
                 }
         }
 
-        @Transactional
         @Override
         public BaseResponse updateBloodPressureById(UpdateBloodPressureByIdRequest request) {
                 BloodPressureRecord bloodPressure = stpBloodPressureRepository
@@ -341,74 +413,5 @@ public class BloodPressureRecordServiceImpl implements BloodPressureRecordServic
                                 ApiReturn.BAD_REQUEST.description(),
                                 Collections.singletonList(
                                                 new BaseDetailsResponse("Not Found ❌", "ไม่พบข้อมูลความดันโลหิต"))));
-        }
-
-        @Override
-        public BaseResponse uploadImage(String id, String base64Image) {
-                if (!stpBloodPressureRepository
-                                .existsByCreateDateAfterAndCreateById(LocalDateTime.now().minusHours(1), id)) {
-                        Map<String, String> requestBody = new HashMap<>();
-                        requestBody.put("api_key", apiKey);
-                        requestBody.put("image_data", base64Image);
-
-                        // Set up headers
-                        HttpHeaders headers = new HttpHeaders();
-                        headers.setContentType(MediaType.APPLICATION_JSON);
-                        headers.setBearerAuth(apiKey);
-
-                        // Create the payload
-                        Map<String, Object> payload = new HashMap<>();
-                        payload.put("model", "gpt-4o");
-
-                        Map<String, Object> userMessage = new HashMap<>();
-                        userMessage.put("role", "user");
-
-                        Map<String, Object> content = new HashMap<>();
-                        content.put("type", "text");
-                        content.put("text", "systolic, diastolic, pulse require json from only.");
-
-                        Map<String, Object> imageContent = new HashMap<>();
-                        imageContent.put("type", "image_url");
-                        imageContent.put("image_url",
-                                        Map.of("detail", "low", "url", base64Image));
-
-                        userMessage.put("content", new Object[] { content, imageContent });
-                        payload.put("messages", new Object[] { userMessage });
-
-                        // Prepare the request entity
-                        HttpEntity<Map<String, Object>> requestEntity = new HttpEntity<>(payload, headers);
-
-                        // Make the API call
-                        String apiUrl = "https://api.openai.com/v1/chat/completions";
-                        try {
-                                @SuppressWarnings("unchecked")
-                                Map<String, Object> response = restTemplate
-                                                .exchange(apiUrl, HttpMethod.POST, requestEntity, Map.class).getBody();
-
-                                // Extract and return the response
-                                if (response != null && response.containsKey("choices")) {
-                                        @SuppressWarnings("unchecked")
-                                        String result = (String) ((Map<String, Object>) ((List<Map<String, Object>>) response
-                                                        .get("choices")).get(0).get("message")).get("content");
-                                        String jsonString = result.substring(result.indexOf("{"));
-                                        ObjectMapper objectMapper = new ObjectMapper();
-                                        JsonNode rootNode = objectMapper.readTree(jsonString);
-
-                                        int sys = rootNode.get("systolic").asInt();
-                                        int dia = rootNode.get("diastolic").asInt();
-                                        int pul = rootNode.get("pulse").asInt();
-                                        CreateBloodPressureRequest bloodPressureRequest = new CreateBloodPressureRequest();
-                                        bloodPressureRequest.setSystolicPressure(sys);
-                                        bloodPressureRequest.setDiastolicPressure(dia);
-                                        bloodPressureRequest.setPulseRate(pul);
-                                        return createBloodPressure(id, bloodPressureRequest);
-                                }
-                        } catch (Exception e) {
-                                e.printStackTrace();
-                        }
-                }
-                return ResponseUtil.buildBaseResponse(ApiReturn.BAD_REQUEST.code(),
-                                ApiReturn.BAD_REQUEST.description(), "Fail ❌",
-                                "ข้อมูลความดันโลหิตถูกบันทึกไปแล้ว ใน 1 ชั่วโมงนี้");
         }
 }

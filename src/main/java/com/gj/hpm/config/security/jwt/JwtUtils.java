@@ -5,10 +5,11 @@ import java.util.Date;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.stereotype.Component;
 
 import com.gj.hpm.config.security.services.UserDetailsImpl;
-import com.gj.hpm.entity.ERole;
+import com.gj.hpm.dto.response.JwtClaimsDTO;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
 
@@ -34,26 +35,28 @@ public class JwtUtils {
 
     UserDetailsImpl userPrincipal = (UserDetailsImpl) authentication.getPrincipal();
 
+    String role = userPrincipal.getAuthorities().stream()
+        .findFirst()
+        .map(GrantedAuthority::getAuthority)
+        .orElseThrow(() -> new RuntimeException("User has no roles assigned"));
+
+    Date issuedAt = new Date();
+    Date expirationAt = calculateExpirationDate(issuedAt);
+
     return Jwts.builder()
         .setSubject(userPrincipal.getEmail())
         .setId(userPrincipal.getId())
-        .claim("role", userPrincipal.getAuthorities().stream().findFirst().get().getAuthority())
-        .setIssuedAt(new Date())
-        .setExpiration(new Date((new Date()).getTime() + jwtExpirationMs))
+        .claim("role", role)
+        .claim("name", userPrincipal.getName())
+        .claim("lineId", userPrincipal.getLineId())
+        .setIssuedAt(issuedAt)
+        .setExpiration(expirationAt)
         .signWith(key(), SignatureAlgorithm.HS256)
         .compact();
   }
 
-  public boolean validateRole(String token){
-    try {
-      String tokenWithoutBearer = token.substring("Bearer ".length());
-      if (Jwts.parserBuilder().setSigningKey(key()).build().parseClaimsJws(tokenWithoutBearer).getBody().get("role").equals(ERole.ROLE_ADMIN.name())) {
-        return true;
-      }
-    } catch (Exception e){
-      log.error("Error validating role: " + e.getMessage());
-    }
-    return false;
+  private Date calculateExpirationDate(Date issuedAt) {
+    return new Date(issuedAt.getTime() + jwtExpirationMs);
   }
 
   private Key key() {
@@ -63,7 +66,7 @@ public class JwtUtils {
   public String getEmailFromJwtToken(String token) {
     try {
       return Jwts.parserBuilder().setSigningKey(key()).build()
-        .parseClaimsJws(token).getBody().getSubject();
+          .parseClaimsJws(token).getBody().getSubject();
     } catch (Exception e) {
       log.error("Error validating role: " + e.getMessage());
     }
@@ -74,7 +77,7 @@ public class JwtUtils {
     try {
       String tokenWithoutBearer = header.substring("Bearer ".length());
       return Jwts.parserBuilder().setSigningKey(key()).build()
-        .parseClaimsJws(tokenWithoutBearer).getBody().getSubject();
+          .parseClaimsJws(tokenWithoutBearer).getBody().getSubject();
     } catch (Exception e) {
       log.error("Error validating role: " + e.getMessage());
     }
@@ -85,18 +88,7 @@ public class JwtUtils {
     try {
       String tokenWithoutBearer = header.substring("Bearer ".length());
       return Jwts.parserBuilder().setSigningKey(key()).build()
-        .parseClaimsJws(tokenWithoutBearer).getBody().getId();
-    } catch (Exception e) {
-      log.error("Error validating role: " + e.getMessage());
-    }
-    return null;
-  }
-
-  public String getLineIdFromHeader(String header) {
-    try {
-      String tokenWithoutBearer = header.substring("Bearer ".length());
-      return Jwts.parserBuilder().setSigningKey(key()).build()
-        .parseClaimsJws(tokenWithoutBearer).getBody().get("lineId").toString();
+          .parseClaimsJws(tokenWithoutBearer).getBody().getId();
     } catch (Exception e) {
       log.error("Error validating role: " + e.getMessage());
     }
@@ -116,7 +108,6 @@ public class JwtUtils {
     } catch (IllegalArgumentException e) {
       log.error("JWT claims string is empty: {}", e.getMessage());
     }
-
     return false;
   }
 
@@ -126,6 +117,25 @@ public class JwtUtils {
       return signedJWT.getJWTClaimsSet();
     } catch (Exception e) {
       log.error("Error decoding ES256 JWT: " + e.getMessage());
+      return null;
+    }
+  }
+
+  public JwtClaimsDTO decodeJwtClaimsDTO(String jwt) {
+    try {
+      SignedJWT signedJWT = SignedJWT.parse(jwt);
+      JWTClaimsSet claimsSet = signedJWT.getJWTClaimsSet();
+
+      JwtClaimsDTO claimsDTO = new JwtClaimsDTO();
+      claimsDTO.setSubject(claimsSet.getSubject());
+      claimsDTO.setJwtId(claimsSet.getJWTID());
+      claimsDTO.setRole(claimsSet.getStringClaim("role"));
+      claimsDTO.setName(claimsSet.getStringClaim("name"));
+      claimsDTO.setLineId(claimsSet.getStringClaim("lineId"));
+
+      return claimsDTO;
+    } catch (Exception e) {
+      log.error("Error decoding JWT: " + e.getMessage());
       return null;
     }
   }

@@ -14,11 +14,12 @@ import com.gj.hpm.dto.request.UpdateBloodPressureByTokenRequest;
 import com.gj.hpm.dto.response.BaseResponse;
 import com.gj.hpm.dto.response.GetBloodPressurePagingResponse;
 import com.gj.hpm.dto.response.GetBloodPressureResponse;
+import com.gj.hpm.dto.response.JwtClaimsDTO;
 
 public interface BloodPressureRecordService {
-    BaseResponse createBloodPressure(String id, CreateBloodPressureRequest request);
+    BaseResponse createBloodPressure(JwtClaimsDTO dto, CreateBloodPressureRequest request);
 
-    BaseResponse uploadImage(String id, String base64Image);
+    BaseResponse uploadImage(JwtClaimsDTO dto, String base64Image);
 
     GetBloodPressureResponse getBloodPressureById(GetBloodPressureRequest request);
 
