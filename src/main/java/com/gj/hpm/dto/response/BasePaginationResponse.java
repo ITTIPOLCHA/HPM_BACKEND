@@ -14,6 +14,12 @@ import lombok.Setter;
 @JsonInclude(com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL)
 public class BasePaginationResponse extends BaseResponse {
     private int totalPages;
-    private long totalItems;
+    private long totalElements;
+    private boolean first;
+    private boolean last;
+    private int numberOfElements;
+    private int size;
+    private int number;
+    private boolean empty;
 
 }

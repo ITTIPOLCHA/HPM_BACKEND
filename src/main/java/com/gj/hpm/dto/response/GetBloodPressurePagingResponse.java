@@ -8,5 +8,5 @@ import lombok.Setter;
 @Getter
 @Setter
 public class GetBloodPressurePagingResponse extends BasePaginationResponse {
-    List<GetBloodPressureDetailPagingResponse> bps;
+    List<GetBloodPressureDetailPagingResponse> content;
 }

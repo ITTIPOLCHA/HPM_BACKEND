@@ -128,14 +128,12 @@ public class JwtUtils {
       }
       SignedJWT signedJWT = SignedJWT.parse(jwt);
       JWTClaimsSet claimsSet = signedJWT.getJWTClaimsSet();
-
       JwtClaimsDTO claimsDTO = new JwtClaimsDTO();
       claimsDTO.setSubject(claimsSet.getSubject());
       claimsDTO.setJwtId(claimsSet.getJWTID());
       claimsDTO.setRole(claimsSet.getStringClaim("role"));
       claimsDTO.setName(claimsSet.getStringClaim("name"));
       claimsDTO.setLineId(claimsSet.getStringClaim("lineId"));
-
       return claimsDTO;
     } catch (Exception e) {
       log.error("Error decoding JWT: " + e.getMessage());

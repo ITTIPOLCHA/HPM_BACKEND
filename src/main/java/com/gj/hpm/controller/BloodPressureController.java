@@ -164,7 +164,9 @@ public class BloodPressureController {
             BaseResponse response = bloodPressureService.deleteBloodPressureById(request);
             return ResponseEntity.ok().body(response);
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
+            log.error("Error deleting blood pressure: {}", e.getMessage());
+            return ResponseEntity.badRequest().body(
+                    ResponseUtil.buildErrorBaseResponse("Error ❌", "เกิดข้อผิดพลาดขณะลบข้อมูลความดันโลหิต"));
         }
     }
 
@@ -178,7 +180,6 @@ public class BloodPressureController {
                 return ResponseEntity.badRequest().body(
                         ResponseUtil.buildErrorBaseResponse("Invalid Token ❌", "Token ไม่ถูกต้อง"));
             }
-
             BaseResponse response = bloodPressureService.deleteBloodPressureByToken(claims, request);
             return ResponseEntity.ok(response);
         } catch (Exception e) {
