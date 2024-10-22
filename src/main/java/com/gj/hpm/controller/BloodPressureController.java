@@ -26,8 +26,14 @@ import com.gj.hpm.dto.request.UpdateBloodPressureByTokenRequest;
 import com.gj.hpm.dto.response.BaseResponse;
 import com.gj.hpm.dto.response.GetBloodPressurePagingResponse;
 import com.gj.hpm.dto.response.GetBloodPressureResponse;
+import com.gj.hpm.dto.response.JwtClaimsDTO;
+import com.gj.hpm.exception.NotFoundException;
 import com.gj.hpm.service.BloodPressureRecordService;
+import com.gj.hpm.util.ResponseUtil;
 
+import lombok.extern.log4j.Log4j2;
+
+@Log4j2
 @CrossOrigin(origins = "*", maxAge = 3600)
 @RestController
 @RequestMapping("/v1/bp")
@@ -53,7 +59,7 @@ public class BloodPressureController {
     }
 
     @PostMapping("/upload")
-    public ResponseEntity<?> uploadImage(@RequestHeader("Authorization") String token,@RequestBody BaseRequest request)
+    public ResponseEntity<?> uploadImage(@RequestHeader("Authorization") String token, @RequestBody BaseRequest request)
             throws IOException {
         try {
             BaseResponse response = bloodPressureService.uploadImage(jwtUtils.decodeJwtClaimsDTO(token),
@@ -72,8 +78,8 @@ public class BloodPressureController {
         try {
             GetBloodPressureResponse response = bloodPressureService.getBloodPressureById(request);
             return ResponseEntity.ok().body(response);
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
+        } catch (NotFoundException e) {
+            return ResponseEntity.badRequest().body(e.getResponse());
         }
     }
 
@@ -82,20 +88,6 @@ public class BloodPressureController {
             @RequestBody GetBloodPressureCreateByRequest request) {
         try {
             List<GetBloodPressureResponse> response = bloodPressureService.getBloodPressureByCreateBy(request);
-            return ResponseEntity.ok().body(response);
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
-        }
-    }
-
-    // * Get By Token
-    @PostMapping("/u/getBloodPressureByToken")
-    public ResponseEntity<?> getBloodPressureByToken(@RequestHeader("Authorization") String token,
-            @RequestBody GetBloodPressureRequest request) {
-        try {
-            GetBloodPressureResponse response = bloodPressureService.getBloodPressureByToken(
-                    jwtUtils.getIdFromHeader(token),
-                    request);
             return ResponseEntity.ok().body(response);
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());
@@ -114,12 +106,26 @@ public class BloodPressureController {
         }
     }
 
+    // * Get By Token
+    @PostMapping("/u/getBloodPressureByToken")
+    public ResponseEntity<?> getBloodPressureByToken(@RequestHeader("Authorization") String token,
+            @RequestBody GetBloodPressureRequest request) {
+        try {
+            GetBloodPressureResponse response = bloodPressureService.getBloodPressureByToken(
+                    jwtUtils.decodeJwtClaimsDTO(token),
+                    request);
+            return ResponseEntity.ok().body(response);
+        } catch (NotFoundException e) {
+            return ResponseEntity.badRequest().body(e.getResponse());
+        }
+    }
+
     @PostMapping("/u/getBloodPressurePagingByUserId")
     public ResponseEntity<?> getBloodPressurePagingByUserId(@RequestHeader("Authorization") String token,
             @RequestBody GetBloodPressureByTokenPagingRequest request) {
         try {
             GetBloodPressurePagingResponse response = bloodPressureService
-                    .getBloodPressurePagingByUserId(jwtUtils.getIdFromHeader(token), request);
+                    .getBloodPressurePagingByUserId(jwtUtils.decodeJwtClaimsDTO(token), request);
             return ResponseEntity.ok().body(response);
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());
@@ -142,7 +148,7 @@ public class BloodPressureController {
     public ResponseEntity<?> updateBloodPressureByToken(@RequestHeader("Authorization") String token,
             @RequestBody UpdateBloodPressureByTokenRequest request) {
         try {
-            BaseResponse response = bloodPressureService.updateBloodPressureByToken(jwtUtils.getIdFromHeader(token),
+            BaseResponse response = bloodPressureService.updateBloodPressureByToken(jwtUtils.decodeJwtClaimsDTO(token),
                     request);
             return ResponseEntity.ok().body(response);
         } catch (Exception e) {
@@ -163,14 +169,23 @@ public class BloodPressureController {
     }
 
     @PostMapping("/u/deleteBloodPressureByToken")
-    public ResponseEntity<?> deleteBloodPressureByToken(@RequestHeader("Authorization") String token,
+    public ResponseEntity<BaseResponse> deleteBloodPressureByToken(
+            @RequestHeader("Authorization") String token,
             @RequestBody DeleteBloodPressureByTokenRequest request) {
         try {
-            BaseResponse response = bloodPressureService.deleteBloodPressureByToken(jwtUtils.getIdFromHeader(token),
-                    request);
-            return ResponseEntity.ok().body(response);
+            JwtClaimsDTO claims = jwtUtils.decodeJwtClaimsDTO(token);
+            if (claims == null) {
+                return ResponseEntity.badRequest().body(
+                        ResponseUtil.buildErrorBaseResponse("Invalid Token ❌", "Token ไม่ถูกต้อง"));
+            }
+
+            BaseResponse response = bloodPressureService.deleteBloodPressureByToken(claims, request);
+            return ResponseEntity.ok(response);
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
+            log.error("Error deleting blood pressure: {}", e.getMessage());
+            return ResponseEntity.badRequest().body(
+                    ResponseUtil.buildErrorBaseResponse("Error ❌", "เกิดข้อผิดพลาดขณะลบข้อมูลความดันโลหิต"));
         }
     }
+
 }

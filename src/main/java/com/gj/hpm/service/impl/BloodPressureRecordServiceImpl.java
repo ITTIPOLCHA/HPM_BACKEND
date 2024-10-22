@@ -49,6 +49,7 @@ import com.gj.hpm.dto.response.GetBloodPressureResponse;
 import com.gj.hpm.dto.response.JwtClaimsDTO;
 import com.gj.hpm.entity.BloodPressureRecord;
 import com.gj.hpm.entity.User;
+import com.gj.hpm.exception.NotFoundException;
 import com.gj.hpm.repository.BloodPressureRecordRepository;
 import com.gj.hpm.repository.StmUserRepository;
 import com.gj.hpm.service.BloodPressureRecordService;
@@ -58,7 +59,11 @@ import com.gj.hpm.util.Constant.StatusFlag;
 import com.gj.hpm.util.LineUtil;
 import com.gj.hpm.util.MongoUtil;
 import com.gj.hpm.util.ResponseUtil;
+import com.mongodb.client.result.DeleteResult;
 
+import lombok.extern.log4j.Log4j2;
+
+@Log4j2
 @Service
 @Transactional
 public class BloodPressureRecordServiceImpl implements BloodPressureRecordService {
@@ -124,7 +129,7 @@ public class BloodPressureRecordServiceImpl implements BloodPressureRecordServic
                         msg = "ระดับ ความดันโลหิตสูงกว่าปกติ คำแนะนำ ปรึกษาแพทย์";
                 } else {
                         update.set("level", Level.NORMAL);
-                        update.set("verified", true);
+                        update.set("isVerified", true);
                         msg = "ระดับ ปกคิ คำแนะนำ ควบคุมอาหาร, ออกกำลังกาย, วัดความดันอยู่เสมอ";
                 }
                 mongoTemplate.updateFirst(new Query(Criteria.where("id").is(dto.getJwtId())), update, User.class,
@@ -212,41 +217,21 @@ public class BloodPressureRecordServiceImpl implements BloodPressureRecordServic
         @Override
         @Transactional(readOnly = true)
         public GetBloodPressureResponse getBloodPressureById(GetBloodPressureRequest request) {
-                GetBloodPressureResponse response = stpBloodPressureRepository
-                                .findByIdGetBloodPressureResp(request.getBloodPressureId()).orElseThrow();
-                if (response != null)
-                        return response;
-                response = new GetBloodPressureResponse();
-                response.setStatus(ResponseUtil.buildBaseStatusResponse(ApiReturn.BAD_REQUEST.code(),
-                                ApiReturn.BAD_REQUEST.description(), "Not Found ❌", "ไม่พบข้อมูลความดันโลหิต"));
-                return response;
+                return stpBloodPressureRepository
+                                .findByIdGetBloodPressureResp(request.getBloodPressureId())
+                                .orElseThrow(() -> new NotFoundException(
+                                                ResponseUtil.buildBaseResponse(
+                                                                ApiReturn.BAD_REQUEST.code(),
+                                                                ApiReturn.BAD_REQUEST.description(),
+                                                                "Not Found ❌",
+                                                                "ไม่พบข้อมูลความดันโลหิต")));
         }
 
         @Override
         @Transactional(readOnly = true)
         public List<GetBloodPressureResponse> getBloodPressureByCreateBy(GetBloodPressureCreateByRequest request) {
-                List<GetBloodPressureResponse> response = stpBloodPressureRepository
+                return stpBloodPressureRepository
                                 .findByCreateBy_Id(request.getUserId());
-                if (!response.isEmpty())
-                        return response;
-                GetBloodPressureResponse resp = new GetBloodPressureResponse();
-                resp.setStatus(ResponseUtil.buildBaseStatusResponse(ApiReturn.BAD_REQUEST.code(),
-                                ApiReturn.BAD_REQUEST.description(), "Not Found ❌", "ไม่พบข้อมูลความดันโลหิต"));
-                response.add(resp);
-                return response;
-        }
-
-        @Override
-        @Transactional(readOnly = true)
-        public GetBloodPressureResponse getBloodPressureByToken(String id, GetBloodPressureRequest request) {
-                GetBloodPressureResponse response = stpBloodPressureRepository
-                                .findByIdAndCreateById(request.getBloodPressureId(), id).orElse(null);
-                if (response != null)
-                        return response;
-                response = new GetBloodPressureResponse();
-                response.setStatus(ResponseUtil.buildBaseStatusResponse(ApiReturn.BAD_REQUEST.code(),
-                                ApiReturn.BAD_REQUEST.description(), "Not Found ❌", "ไม่พบข้อมูลความดันโลหิต"));
-                return response;
         }
 
         @Override
@@ -290,9 +275,22 @@ public class BloodPressureRecordServiceImpl implements BloodPressureRecordServic
 
         @Override
         @Transactional(readOnly = true)
-        public GetBloodPressurePagingResponse getBloodPressurePagingByUserId(String id,
+        public GetBloodPressureResponse getBloodPressureByToken(JwtClaimsDTO dto, GetBloodPressureRequest request) {
+                return stpBloodPressureRepository
+                                .findByIdAndCreateById(request.getBloodPressureId(), dto.getJwtId())
+                                .orElseThrow(() -> new NotFoundException(
+                                                ResponseUtil.buildBaseResponse(
+                                                                ApiReturn.BAD_REQUEST.code(),
+                                                                ApiReturn.BAD_REQUEST.description(),
+                                                                "Not Found ❌",
+                                                                "ไม่พบข้อมูลความดันโลหิต")));
+        }
+
+        @Override
+        @Transactional(readOnly = true)
+        public GetBloodPressurePagingResponse getBloodPressurePagingByUserId(JwtClaimsDTO dto,
                         GetBloodPressureByTokenPagingRequest request) {
-                Page<GetBloodPressureDetailPagingResponse> bpPage = findByAggregationFromToken(id, request);
+                Page<GetBloodPressureDetailPagingResponse> bpPage = findByAggregationFromToken(dto.getJwtId(), request);
                 GetBloodPressurePagingResponse response = new GetBloodPressurePagingResponse();
                 response.setBps(bpPage.getContent());
                 response.setTotalPages(bpPage.getTotalPages());
@@ -357,14 +355,14 @@ public class BloodPressureRecordServiceImpl implements BloodPressureRecordServic
         }
 
         @Override
-        public BaseResponse updateBloodPressureByToken(String id, UpdateBloodPressureByTokenRequest request) {
+        public BaseResponse updateBloodPressureByToken(JwtClaimsDTO dto, UpdateBloodPressureByTokenRequest request) {
                 BloodPressureRecord bloodPressure = stpBloodPressureRepository
-                                .findByIdAndCreateBy_Id(request.getBloodPressureId(), id).orElse(null);
+                                .findByIdAndCreateBy_Id(request.getBloodPressureId(), dto.getJwtId()).orElse(null);
                 if (bloodPressure != null) {
                         bloodPressure.setSystolicPressure(request.getSystolicPressure());
                         bloodPressure.setDiastolicPressure(request.getDiastolicPressure());
                         bloodPressure.setPulseRate(request.getPulseRate());
-                        bloodPressure.setUpdateBy(User.builder().id(id).build());
+                        bloodPressure.setUpdateBy(User.builder().id(dto.getJwtId()).build());
                         stpBloodPressureRepository.save(bloodPressure);
                         return new BaseResponse(
                                         new BaseStatusResponse(ApiReturn.SUCCESS.code(),
@@ -398,20 +396,24 @@ public class BloodPressureRecordServiceImpl implements BloodPressureRecordServic
         }
 
         @Override
-        public BaseResponse deleteBloodPressureByToken(String id, DeleteBloodPressureByTokenRequest request) {
-                boolean verify = stpBloodPressureRepository.existsByIdAndCreateById(request.getBloodPressureId(), id);
-                if (verify) {
-                        stpBloodPressureRepository.deleteById(request.getBloodPressureId());
-                        return new BaseResponse(
-                                        new BaseStatusResponse(ApiReturn.SUCCESS.code(),
-                                                        ApiReturn.SUCCESS.description(),
-                                                        Collections.singletonList(
-                                                                        new BaseDetailsResponse("Success ✅",
-                                                                                        "ลบข้อมูลความดันโลหิตสำเร็จ"))));
+        public BaseResponse deleteBloodPressureByToken(JwtClaimsDTO dto, DeleteBloodPressureByTokenRequest request) {
+                if (dto.getJwtId() == null || request.getBloodPressureId() == null) {
+                        return ResponseUtil.buildErrorBaseResponse("Invalid Request ❌", "ข้อมูลไม่ครบถ้วน");
                 }
-                return new BaseResponse(new BaseStatusResponse(ApiReturn.BAD_REQUEST.code(),
-                                ApiReturn.BAD_REQUEST.description(),
-                                Collections.singletonList(
-                                                new BaseDetailsResponse("Not Found ❌", "ไม่พบข้อมูลความดันโลหิต"))));
+
+                Query query = new Query(Criteria.where("patient.$id").is(dto.getJwtId())
+                                .and("id").is(request.getBloodPressureId()));
+
+                DeleteResult result = mongoTemplate.remove(query, BloodPressureRecord.class, "bloodPressureRecord");
+
+                if (result.getDeletedCount() > 0) {
+                        log.info("ลบข้อมูลความดันโลหิตสำเร็จสำหรับผู้ใช้: {}", dto.getJwtId());
+                        return ResponseUtil.buildSuccessBaseResponse("Success ✅", "ลบข้อมูลความดันโลหิตสำเร็จ");
+                } else {
+                        log.warn("ไม่พบข้อมูลความดันโลหิตสำหรับการลบ: {}", request.getBloodPressureId());
+                        return ResponseUtil.buildErrorBaseResponse("Not Found ❌",
+                                        "ไม่พบข้อมูลความดันโลหิตที่ต้องการลบ");
+                }
         }
+
 }

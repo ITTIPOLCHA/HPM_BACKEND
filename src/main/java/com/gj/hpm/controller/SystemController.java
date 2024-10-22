@@ -17,7 +17,6 @@ import com.gj.hpm.dto.request.SignUpRequest;
 import com.gj.hpm.dto.response.BaseResponse;
 import com.gj.hpm.dto.response.JwtResponse;
 import com.gj.hpm.service.UserService;
-import com.gj.hpm.util.Constant.ApiReturn;
 import com.gj.hpm.util.ResponseUtil;
 
 import jakarta.validation.Valid;
@@ -32,7 +31,7 @@ public class SystemController {
 
         @GetMapping("/ping")
         public ResponseEntity<?> ping() {
-                return ResponseUtil.buildSuccessResponse(ApiReturn.SUCCESS.code(), ApiReturn.SUCCESS.description(),
+                return ResponseUtil.buildSuccessResponse(
                                 "สำเร็จ ✅", "ปิง สำเร็จ");
         }
 
@@ -42,8 +41,7 @@ public class SystemController {
                         JwtResponse response = userService.signIn(req);
                         return ResponseEntity.ok(response);
                 } catch (Exception e) {
-                        return ResponseUtil.buildErrorResponse(ApiReturn.BAD_REQUEST.code(),
-                                        ApiReturn.BAD_REQUEST.description(),
+                        return ResponseUtil.buildErrorResponse(
                                         "เกิดข้อผิดพลาด ❌",
                                         "เข้าสู่ระบบไม่สำเร็จ.");
                 }
@@ -55,8 +53,7 @@ public class SystemController {
                         BaseResponse response = userService.signUp(req);
                         return ResponseEntity.ok(response);
                 } catch (Exception e) {
-                        return ResponseUtil.buildErrorResponse(ApiReturn.BAD_REQUEST.code(),
-                                        ApiReturn.BAD_REQUEST.description(),
+                        return ResponseUtil.buildErrorResponse(
                                         "เกิดข้อผิดพลาด ❌",
                                         "สมัครสมาชิกไม่สำเร็จ.");
                 }
@@ -68,8 +65,7 @@ public class SystemController {
                         BaseResponse response = userService.setInactive();
                         return ResponseEntity.ok(response);
                 } catch (Exception e) {
-                        return ResponseUtil.buildErrorResponse(ApiReturn.BAD_REQUEST.code(),
-                                        ApiReturn.BAD_REQUEST.description(),
+                        return ResponseUtil.buildErrorResponse(
                                         "เกิดข้อผิดพลาด ❌",
                                         "ไม่สามารถเปลี่ยนสถานะเป็น Inactive ได้.");
                 }
@@ -83,8 +79,7 @@ public class SystemController {
                                         request);
                         return ResponseEntity.ok().body(response);
                 } catch (Exception e) {
-                        return ResponseUtil.buildErrorResponse(ApiReturn.BAD_REQUEST.code(),
-                                        ApiReturn.BAD_REQUEST.description(),
+                        return ResponseUtil.buildErrorResponse(
                                         "เกิดข้อผิดพลาด ❌",
                                         "ไม่สามารถเปลี่ยนรหัสผ่านได้.");
                 }
@@ -96,8 +91,7 @@ public class SystemController {
                         BaseResponse response = userService.forgotPassword(request);
                         return ResponseEntity.ok().body(response);
                 } catch (Exception e) {
-                        return ResponseUtil.buildErrorResponse(ApiReturn.BAD_REQUEST.code(),
-                                        ApiReturn.BAD_REQUEST.description(),
+                        return ResponseUtil.buildErrorResponse(
                                         "เกิดข้อผิดพลาด ❌",
                                         "ไม่สามารถขอเปลี่ยนรหัสผ่านได้.");
                 }

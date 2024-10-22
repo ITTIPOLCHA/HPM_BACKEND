@@ -25,19 +25,19 @@ public interface BloodPressureRecordService {
 
     List<GetBloodPressureResponse> getBloodPressureByCreateBy(GetBloodPressureCreateByRequest request);
 
-    GetBloodPressureResponse getBloodPressureByToken(String id, GetBloodPressureRequest request);
-
     GetBloodPressurePagingResponse getBloodPressurePaging(GetBloodPressurePagingRequest request);
 
-    GetBloodPressurePagingResponse getBloodPressurePagingByUserId(String id,
+    GetBloodPressureResponse getBloodPressureByToken(JwtClaimsDTO dto, GetBloodPressureRequest request);
+
+    GetBloodPressurePagingResponse getBloodPressurePagingByUserId(JwtClaimsDTO dto,
             GetBloodPressureByTokenPagingRequest request);
 
     BaseResponse updateBloodPressureById(UpdateBloodPressureByIdRequest request);
 
-    BaseResponse updateBloodPressureByToken(String id, UpdateBloodPressureByTokenRequest request);
+    BaseResponse updateBloodPressureByToken(JwtClaimsDTO dto, UpdateBloodPressureByTokenRequest request);
 
     BaseResponse deleteBloodPressureById(DeleteBloodPressureByIdRequest request);
 
-    BaseResponse deleteBloodPressureByToken(String id, DeleteBloodPressureByTokenRequest request);
+    BaseResponse deleteBloodPressureByToken(JwtClaimsDTO dto, DeleteBloodPressureByTokenRequest request);
 
 }
