@@ -360,7 +360,7 @@ public class UserServiceImpl implements UserService {
                         user.setLastName(request.getLastName());
                         user.setEmail(request.getEmail());
                         user.setUsername(request.getEmail());
-                        user.setPhoneNumber(request.getPhone());
+                        user.setPhoneNumber(request.getPhoneNumber());
                         user.setHospitalNumber(request.getHospitalNumber());
                         user.setUpdateBy(User.builder().id(id).build());
                         user.setUpdateDate(LocalDateTime.now());
@@ -385,7 +385,7 @@ public class UserServiceImpl implements UserService {
                         user.setLastName(request.getLastName());
                         user.setEmail(request.getEmail());
                         user.setUsername(request.getEmail());
-                        user.setPhoneNumber(request.getPhone());
+                        user.setPhoneNumber(request.getPhoneNumber());
                         user.setHospitalNumber(request.getHospitalNumber());
                         user.setUpdateBy(User.builder().id(id).build());
                         user.setUpdateDate(LocalDateTime.now());
@@ -505,7 +505,7 @@ public class UserServiceImpl implements UserService {
         @Override
         public BaseResponse forgotPassword(PasswordForgotRequest request) {
 
-                User user = stmUserRepository.findByEmailAndPhoneNumber(request.getEmail(), request.getPhone())
+                User user = stmUserRepository.findByEmailAndPhoneNumber(request.getEmail(), request.getPhoneNumber())
                                 .orElse(null);
 
                 if (user != null) {

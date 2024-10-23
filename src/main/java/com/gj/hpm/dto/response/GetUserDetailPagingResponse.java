@@ -11,13 +11,13 @@ public class GetUserDetailPagingResponse extends BaseResponse {
     private String id;
     private String email;
     private String hospitalNumber;
-    private String phone;
+    private String phoneNumber;
     private String firstName;
     private String lastName;
     private String lineName;
     private String statusFlag;
     private String level;
-    private boolean checkState;
+    private boolean isVerified;
     private DropdownUserResp updateBy;
     private LocalDateTime updateDate;
 

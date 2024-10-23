@@ -12,7 +12,7 @@ public class PasswordForgotRequest extends BaseRequest {
     @Email(regexp = "[a-z0-9._%+-]+@[a-z0-9.-]+\\.[a-z]{2,3}", message = "{msg.signup.err.valid.email}")
     private String email;
     @MobilePhone
-    private String phone;
+    private String phoneNumber;
     private String newPassword;
 
 }

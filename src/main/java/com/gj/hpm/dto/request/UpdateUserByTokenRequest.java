@@ -20,7 +20,7 @@ public class UpdateUserByTokenRequest extends BaseRequest {
     private String hospitalNumber;
     @NotBlank(message = "{notEmpty.message}")
     @MobilePhone
-    private String phone;
+    private String phoneNumber;
     @NotBlank(message = "{notEmpty.message}")
     private String firstName;
     @NotBlank(message = "{notEmpty.message}")

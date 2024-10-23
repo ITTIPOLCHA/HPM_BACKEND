@@ -10,8 +10,8 @@ public class GetUserListByLevelResponse {
     private String firstName;
     private String lastName;
     private String hospitalNumber;
-    private String phone;
+    private String phoneNumber;
     private String level;
     private String pictureUrl;
-    private boolean checkState;
+    private boolean isVerified;
 }

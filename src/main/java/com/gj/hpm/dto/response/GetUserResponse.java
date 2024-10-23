@@ -14,7 +14,7 @@ public class GetUserResponse extends BaseResponse {
     private String id;
     private String email;
     private String hospitalNumber;
-    private String phoneNumber;
+    private String phoneNumberNumber;
     private String firstName;
     private String lastName;
     private String lineName;
