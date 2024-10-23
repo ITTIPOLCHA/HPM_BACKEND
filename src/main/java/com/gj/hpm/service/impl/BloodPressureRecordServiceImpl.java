@@ -133,7 +133,7 @@ public class BloodPressureRecordServiceImpl implements BloodPressureRecordServic
                         msg = "ระดับ ความดันโลหิตสูงกว่าปกติ คำแนะนำ ปรึกษาแพทย์";
                 } else {
                         update.set("level", Level.NORMAL);
-                        update.set("isVerified", true);
+                        update.set("verified", true);
                         msg = "ระดับ ปกคิ คำแนะนำ ควบคุมอาหาร, ออกกำลังกาย, วัดความดันอยู่เสมอ";
                 }
                 mongoTemplate.updateFirst(new Query(Criteria.where("_id").is(new ObjectId(dto.getJwtId()))), update,
@@ -218,7 +218,9 @@ public class BloodPressureRecordServiceImpl implements BloodPressureRecordServic
                                         return createBloodPressure(dto, bloodPressureRequest);
                                 }
                         } catch (Exception e) {
-                                e.printStackTrace();
+                                return ResponseUtil.buildBaseResponse(ApiReturn.BAD_REQUEST.code(),
+                                ApiReturn.BAD_REQUEST.description(), "Fail ❌",
+                                e.getMessage());
                         }
                 }
                 return ResponseUtil.buildBaseResponse(ApiReturn.BAD_REQUEST.code(),

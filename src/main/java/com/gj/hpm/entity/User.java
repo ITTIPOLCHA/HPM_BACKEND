@@ -46,7 +46,7 @@ public class User extends BaseEntity {
     private Level level = Level.NORMAL;
 
     @Builder.Default
-    private boolean isVerified = false;
+    private boolean verified = false;
 
     @Builder.Default
     @DBRef

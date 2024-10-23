@@ -12,5 +12,5 @@ import lombok.Setter;
 public class UpdateUserCheckStateRequest extends BaseRequest {
     @NotBlank(message = "{notEmpty.message}")
     private String patientId;
-    private boolean isVerified;
+    private boolean verified;
 }

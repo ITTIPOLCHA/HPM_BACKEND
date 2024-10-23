@@ -21,7 +21,7 @@ public class GetUserResponse extends BaseResponse {
     private String pictureUrl;
     private String statusFlag;
     private Level level;
-    private boolean isVerified;
+    private boolean verified;
     private DropdownUserResp createBy;
     private LocalDateTime createDate;
     private DropdownUserResp updateBy;

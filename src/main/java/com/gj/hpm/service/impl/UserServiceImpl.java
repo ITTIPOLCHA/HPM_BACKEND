@@ -405,7 +405,7 @@ public class UserServiceImpl implements UserService {
         @Override
         public BaseResponse updateUserCheckState(UpdateUserCheckStateRequest request) {
                 Update update = new Update();
-                update.set("isVerified", request.isVerified());
+                update.set("verified", request.isVerified());
                 update.set("updateBy", User.builder().id(request.getActionId()).build());
                 update.set("updateDate", LocalDateTime.now());
                 UpdateResult result = mongoTemplate.updateFirst(
@@ -459,7 +459,7 @@ public class UserServiceImpl implements UserService {
                 Update update = new Update();
                 update.set("statusFlag", StatusFlag.INACTIVE.code());
                 update.set("level", Level.NORMAL);
-                update.set("isVerified", false);
+                update.set("verified", false);
                 mongoTemplate.updateMulti(new Query(Criteria.where("lineId").ne(null)), update,
                                 User.class, "user");
                 return new BaseResponse(
