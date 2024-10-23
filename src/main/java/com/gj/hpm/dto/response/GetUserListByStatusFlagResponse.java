@@ -9,7 +9,7 @@ public class GetUserListByStatusFlagResponse {
     private String id;
     private String firstName;
     private String lastName;
-    private String hn;
+    private String hospitalNumber;
     private String phone;
     private String statusFlag;
     private String pictureUrl;

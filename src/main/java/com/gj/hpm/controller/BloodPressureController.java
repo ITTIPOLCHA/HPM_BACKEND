@@ -50,8 +50,12 @@ public class BloodPressureController {
     public ResponseEntity<?> createBloodPressure(@RequestHeader("Authorization") String token,
             @RequestBody CreateBloodPressureRequest request) {
         try {
-            BaseResponse response = bloodPressureService.createBloodPressure(jwtUtils.decodeJwtClaimsDTO(token),
-                    request);
+            JwtClaimsDTO claims = jwtUtils.decodeJwtClaimsDTO(token);
+            if (claims == null) {
+                return ResponseEntity.badRequest().body(
+                        ResponseUtil.buildErrorBaseResponse("Invalid Token ❌", "Token ไม่ถูกต้อง"));
+            }
+            BaseResponse response = bloodPressureService.createBloodPressure(claims, request);
             return ResponseEntity.ok().body(response);
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());
@@ -62,8 +66,12 @@ public class BloodPressureController {
     public ResponseEntity<?> uploadImage(@RequestHeader("Authorization") String token, @RequestBody BaseRequest request)
             throws IOException {
         try {
-            BaseResponse response = bloodPressureService.uploadImage(jwtUtils.decodeJwtClaimsDTO(token),
-                    request.getRequestId());
+            JwtClaimsDTO claims = jwtUtils.decodeJwtClaimsDTO(token);
+            if (claims == null) {
+                return ResponseEntity.badRequest().body(
+                        ResponseUtil.buildErrorBaseResponse("Invalid Token ❌", "Token ไม่ถูกต้อง"));
+            }
+            BaseResponse response = bloodPressureService.uploadImage(claims, request.getRequestId());
             return ResponseEntity.ok().body(response);
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());
@@ -111,9 +119,12 @@ public class BloodPressureController {
     public ResponseEntity<?> getBloodPressureByToken(@RequestHeader("Authorization") String token,
             @RequestBody GetBloodPressureRequest request) {
         try {
-            GetBloodPressureResponse response = bloodPressureService.getBloodPressureByToken(
-                    jwtUtils.decodeJwtClaimsDTO(token),
-                    request);
+            JwtClaimsDTO claims = jwtUtils.decodeJwtClaimsDTO(token);
+            if (claims == null) {
+                return ResponseEntity.badRequest().body(
+                        ResponseUtil.buildErrorBaseResponse("Invalid Token ❌", "Token ไม่ถูกต้อง"));
+            }
+            GetBloodPressureResponse response = bloodPressureService.getBloodPressureByToken(claims, request);
             return ResponseEntity.ok().body(response);
         } catch (NotFoundException e) {
             return ResponseEntity.badRequest().body(e.getResponse());
@@ -124,8 +135,13 @@ public class BloodPressureController {
     public ResponseEntity<?> getBloodPressurePagingByUserId(@RequestHeader("Authorization") String token,
             @RequestBody GetBloodPressureByTokenPagingRequest request) {
         try {
-            GetBloodPressurePagingResponse response = bloodPressureService
-                    .getBloodPressurePagingByUserId(jwtUtils.decodeJwtClaimsDTO(token), request);
+            JwtClaimsDTO claims = jwtUtils.decodeJwtClaimsDTO(token);
+            if (claims == null) {
+                return ResponseEntity.badRequest().body(
+                        ResponseUtil.buildErrorBaseResponse("Invalid Token ❌", "Token ไม่ถูกต้อง"));
+            }
+            GetBloodPressurePagingResponse response = bloodPressureService.getBloodPressurePagingByUserId(claims,
+                    request);
             return ResponseEntity.ok().body(response);
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());
@@ -148,8 +164,12 @@ public class BloodPressureController {
     public ResponseEntity<?> updateBloodPressureByToken(@RequestHeader("Authorization") String token,
             @RequestBody UpdateBloodPressureByTokenRequest request) {
         try {
-            BaseResponse response = bloodPressureService.updateBloodPressureByToken(jwtUtils.decodeJwtClaimsDTO(token),
-                    request);
+            JwtClaimsDTO claims = jwtUtils.decodeJwtClaimsDTO(token);
+            if (claims == null) {
+                return ResponseEntity.badRequest().body(
+                        ResponseUtil.buildErrorBaseResponse("Invalid Token ❌", "Token ไม่ถูกต้อง"));
+            }
+            BaseResponse response = bloodPressureService.updateBloodPressureByToken(claims, request);
             return ResponseEntity.ok().body(response);
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());
@@ -164,14 +184,12 @@ public class BloodPressureController {
             BaseResponse response = bloodPressureService.deleteBloodPressureById(request);
             return ResponseEntity.ok().body(response);
         } catch (Exception e) {
-            log.error("Error deleting blood pressure: {}", e.getMessage());
-            return ResponseEntity.badRequest().body(
-                    ResponseUtil.buildErrorBaseResponse("Error ❌", "เกิดข้อผิดพลาดขณะลบข้อมูลความดันโลหิต"));
+            return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
 
     @PostMapping("/u/deleteBloodPressureByToken")
-    public ResponseEntity<BaseResponse> deleteBloodPressureByToken(
+    public ResponseEntity<?> deleteBloodPressureByToken(
             @RequestHeader("Authorization") String token,
             @RequestBody DeleteBloodPressureByTokenRequest request) {
         try {
@@ -183,9 +201,7 @@ public class BloodPressureController {
             BaseResponse response = bloodPressureService.deleteBloodPressureByToken(claims, request);
             return ResponseEntity.ok(response);
         } catch (Exception e) {
-            log.error("Error deleting blood pressure: {}", e.getMessage());
-            return ResponseEntity.badRequest().body(
-                    ResponseUtil.buildErrorBaseResponse("Error ❌", "เกิดข้อผิดพลาดขณะลบข้อมูลความดันโลหิต"));
+            return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
 

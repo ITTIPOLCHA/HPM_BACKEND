@@ -1,7 +1,6 @@
 package com.gj.hpm.service.impl;
 
 import java.time.LocalDateTime;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -40,9 +39,7 @@ import com.gj.hpm.dto.request.GetBloodPressurePagingRequest;
 import com.gj.hpm.dto.request.GetBloodPressureRequest;
 import com.gj.hpm.dto.request.UpdateBloodPressureByIdRequest;
 import com.gj.hpm.dto.request.UpdateBloodPressureByTokenRequest;
-import com.gj.hpm.dto.response.BaseDetailsResponse;
 import com.gj.hpm.dto.response.BaseResponse;
-import com.gj.hpm.dto.response.BaseStatusResponse;
 import com.gj.hpm.dto.response.GetBloodPressureDetailPagingResponse;
 import com.gj.hpm.dto.response.GetBloodPressurePagingResponse;
 import com.gj.hpm.dto.response.GetBloodPressureResponse;
@@ -60,6 +57,7 @@ import com.gj.hpm.util.LineUtil;
 import com.gj.hpm.util.MongoUtil;
 import com.gj.hpm.util.ResponseUtil;
 import com.mongodb.client.result.DeleteResult;
+import com.mongodb.client.result.UpdateResult;
 
 import lombok.extern.log4j.Log4j2;
 
@@ -245,17 +243,23 @@ public class BloodPressureRecordServiceImpl implements BloodPressureRecordServic
         @Transactional(readOnly = true)
         public List<GetBloodPressureResponse> getBloodPressureByCreateBy(GetBloodPressureCreateByRequest request) {
                 return stpBloodPressureRepository
-                                .findByCreateBy_Id(request.getUserId());
+                                .findByPatient_Id(request.getUserId());
         }
 
         @Override
         @Transactional(readOnly = true)
         public GetBloodPressurePagingResponse getBloodPressurePaging(GetBloodPressurePagingRequest request) {
-                Page<GetBloodPressureDetailPagingResponse> bpPage = findByAggregation(request);
+                Page<GetBloodPressureDetailPagingResponse> content = findByAggregation(request);
                 GetBloodPressurePagingResponse response = new GetBloodPressurePagingResponse();
-                response.setContent(bpPage.getContent());
-                response.setTotalPages(bpPage.getTotalPages());
-                response.setTotalElements(bpPage.getTotalElements());
+                response.setContent(content.getContent());
+                response.setTotalPages(content.getTotalPages());
+                response.setTotalElements(content.getTotalElements());
+                response.setFirst(content.isFirst());
+                response.setLast(content.isLast());
+                response.setNumberOfElements(content.getNumberOfElements());
+                response.setSize(content.getSize());
+                response.setNumber(content.getNumber());
+                response.setEmpty(content.isEmpty());
                 return response;
         }
 
@@ -270,7 +274,7 @@ public class BloodPressureRecordServiceImpl implements BloodPressureRecordServic
                                 Aggregation.skip((long) pageable.getOffset()),
                                 Aggregation.limit(pageable.getPageSize()));
                 AggregationResults<GetBloodPressureDetailPagingResponse> aggregationResults = mongoTemplate.aggregate(
-                                aggregation, "bloodPressure", GetBloodPressureDetailPagingResponse.class);
+                                aggregation, "bloodPressureRecord", GetBloodPressureDetailPagingResponse.class);
                 List<GetBloodPressureDetailPagingResponse> results = aggregationResults.getMappedResults();
                 long total = mongoTemplate.count(new Query(criteria), BloodPressureRecord.class, "bloodPressureRecord");
                 return new PageImpl<>(results, pageable, total);
@@ -278,12 +282,12 @@ public class BloodPressureRecordServiceImpl implements BloodPressureRecordServic
 
         private Criteria setCriteria(GetBloodPressurePagingRequest request) {
                 Criteria criteria = new Criteria();
-                addCriteriaIfNotEmpty(criteria, "sys", request.getSystolicPressure());
-                addCriteriaIfNotEmpty(criteria, "dia", request.getDiastolicPressure());
-                addCriteriaIfNotEmpty(criteria, "pul", request.getPulseRate());
+                addCriteriaIfNotEmpty(criteria, "systolicPressure", request.getSystolicPressure());
+                addCriteriaIfNotEmpty(criteria, "diastolicPressure", request.getDiastolicPressure());
+                addCriteriaIfNotEmpty(criteria, "pulseRate", request.getPulseRate());
                 addCriteriaIfNotEmpty(criteria, "statusFlag", request.getStatusFlag());
-                if (StringUtils.isNotEmpty(request.getCreateBy()))
-                        criteria.and("createBy.$id").is(new ObjectId(request.getCreateBy()));
+                if (StringUtils.isNotEmpty(request.getPatient()))
+                        criteria.and("patient.$id").is(new ObjectId(request.getPatient()));
                 return criteria;
         }
 
@@ -339,7 +343,7 @@ public class BloodPressureRecordServiceImpl implements BloodPressureRecordServic
 
         private Criteria setCriteriaFromToken(String id, GetBloodPressureByTokenPagingRequest request) {
                 Criteria criteria = new Criteria();
-                criteria.and("createBy.$id").is(new ObjectId(id));
+                criteria.and("patient.$id").is(new ObjectId(id));
                 addCriteriaIfNotEmpty(criteria, "systolicPressure", request.getSystolicPressure());
                 addCriteriaIfNotEmpty(criteria, "diastolicPressure", request.getDiastolicPressure());
                 addCriteriaIfNotEmpty(criteria, "pulseRate", request.getPulseRate());
@@ -360,43 +364,42 @@ public class BloodPressureRecordServiceImpl implements BloodPressureRecordServic
 
         @Override
         public BaseResponse updateBloodPressureById(UpdateBloodPressureByIdRequest request) {
-                BloodPressureRecord bloodPressure = stpBloodPressureRepository
-                                .findById(request.getBloodPressureId()).orElse(null);
-                if (bloodPressure == null)
-                        return ResponseUtil.buildBaseResponse(ApiReturn.BAD_REQUEST.code(),
-                                        ApiReturn.BAD_REQUEST.description(), "Not Found ❌", "ไม่พบข้อมูลความดันโลหิต");
-
-                bloodPressure.setSystolicPressure(request.getSystolicPressure());
-                bloodPressure.setDiastolicPressure(request.getDiastolicPressure());
-                bloodPressure.setPulseRate(request.getPulseRate());
-                bloodPressure.setCreateBy(User.builder().id(request.getUserId()).build());
-                bloodPressure.setUpdateBy(User.builder().id(request.getActionId()).build());
-                stpBloodPressureRepository.save(bloodPressure);
-                return ResponseUtil.buildBaseResponse(ApiReturn.SUCCESS.code(), ApiReturn.SUCCESS.description(),
-                                "Success ✅", "อัพเดทข้อมูลความดันโลหิตสำเร็จ");
+                Update update = new Update();
+                update.set("systolicPressure", request.getSystolicPressure());
+                update.set("diastolicPressure", request.getDiastolicPressure());
+                update.set("pulseRate", request.getPulseRate());
+                update.set("updateBy", User.builder().id(request.getActionId()).build());
+                update.set("updateDate", LocalDateTime.now());
+                UpdateResult result = mongoTemplate.updateFirst(
+                                new Query(Criteria.where("_id").is(new ObjectId(request.getBloodPressureId()))
+                                                .and("patient.$id").is(new ObjectId(request.getUserId()))),
+                                update, BloodPressureRecord.class, "bloodPressureRecord");
+                if (result.getMatchedCount() > 0) {
+                        return ResponseUtil.buildSuccessBaseResponse("Success ✅", "อัพเดทข้อมูลความดันโลหิตสำเร็จ");
+                } else {
+                        return ResponseUtil.buildErrorBaseResponse("Not Found ❌",
+                                        "ไม่พบข้อมูลความดันโลหิต");
+                }
         }
 
         @Override
         public BaseResponse updateBloodPressureByToken(JwtClaimsDTO dto, UpdateBloodPressureByTokenRequest request) {
-                BloodPressureRecord bloodPressure = stpBloodPressureRepository
-                                .findByIdAndCreateBy_Id(request.getBloodPressureId(), dto.getJwtId()).orElse(null);
-                if (bloodPressure != null) {
-                        bloodPressure.setSystolicPressure(request.getSystolicPressure());
-                        bloodPressure.setDiastolicPressure(request.getDiastolicPressure());
-                        bloodPressure.setPulseRate(request.getPulseRate());
-                        bloodPressure.setUpdateBy(User.builder().id(dto.getJwtId()).build());
-                        stpBloodPressureRepository.save(bloodPressure);
-                        return new BaseResponse(
-                                        new BaseStatusResponse(ApiReturn.SUCCESS.code(),
-                                                        ApiReturn.SUCCESS.description(),
-                                                        Collections.singletonList(
-                                                                        new BaseDetailsResponse("Success ✅",
-                                                                                        "อัพเดทข้อมูลความดันโลหิตสำเร็จ"))));
+                Update update = new Update();
+                update.set("systolicPressure", request.getSystolicPressure());
+                update.set("diastolicPressure", request.getDiastolicPressure());
+                update.set("pulseRate", request.getPulseRate());
+                update.set("updateBy", User.builder().id(dto.getJwtId()).build());
+                update.set("updateDate", LocalDateTime.now());
+                UpdateResult result = mongoTemplate.updateFirst(
+                                new Query(Criteria.where("_id").is(new ObjectId(request.getBloodPressureId()))
+                                                .and("patient.$id").is(new ObjectId(dto.getJwtId()))),
+                                update, BloodPressureRecord.class, "bloodPressureRecord");
+                if (result.getMatchedCount() > 0) {
+                        return ResponseUtil.buildSuccessBaseResponse("Success ✅", "อัพเดทข้อมูลความดันโลหิตสำเร็จ");
+                } else {
+                        return ResponseUtil.buildErrorBaseResponse("Not Found ❌",
+                                        "ไม่พบข้อมูลความดันโลหิต");
                 }
-                return new BaseResponse(new BaseStatusResponse(ApiReturn.BAD_REQUEST.code(),
-                                ApiReturn.BAD_REQUEST.description(),
-                                Collections.singletonList(
-                                                new BaseDetailsResponse("Not Found ❌", "ไม่พบข้อมูลความดันโลหิต"))));
         }
 
         @Override

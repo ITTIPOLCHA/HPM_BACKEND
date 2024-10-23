@@ -19,7 +19,7 @@ public class UpdateUserByIdRequest extends BaseRequest {
     @Email(regexp = "[a-z0-9._%+-]+@[a-z0-9.-]+\\.[a-z]{2,3}", message = "{msg.signup.err.valid.email}")
     private String email;
     @NotBlank(message = "{notEmpty.message}")
-    private String hn;
+    private String hospitalNumber;
     @NotBlank(message = "{notEmpty.message}")
     @MobilePhone
     private String phone;

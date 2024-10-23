@@ -359,7 +359,7 @@ public class UserServiceImpl implements UserService {
                         user.setEmail(request.getEmail());
                         user.setUsername(request.getEmail());
                         user.setPhoneNumber(request.getPhone());
-                        user.setHospitalNumber(request.getHn());
+                        user.setHospitalNumber(request.getHospitalNumber());
                         user.setUpdateBy(User.builder().id(id).build());
                         user.setUpdateDate(LocalDateTime.now());
                         stmUserRepository.save(user);
@@ -384,7 +384,7 @@ public class UserServiceImpl implements UserService {
                         user.setEmail(request.getEmail());
                         user.setUsername(request.getEmail());
                         user.setPhoneNumber(request.getPhone());
-                        user.setHospitalNumber(request.getHn());
+                        user.setHospitalNumber(request.getHospitalNumber());
                         user.setUpdateBy(User.builder().id(id).build());
                         user.setUpdateDate(LocalDateTime.now());
                         stmUserRepository.save(user);
@@ -423,7 +423,7 @@ public class UserServiceImpl implements UserService {
                 boolean verify = stmUserRepository.existsById(request.getUserId());
                 if (verify) {
                         stmUserRepository.deleteById(request.getUserId());
-                        stpBloodPressureRepository.deleteByCreateBy_Id(request.getUserId());
+                        stpBloodPressureRepository.deleteByPatient_Id(request.getUserId());
                         return new BaseResponse(new BaseStatusResponse(ApiReturn.SUCCESS.code(),
                                         ApiReturn.SUCCESS.description(),
                                         Collections.singletonList(
@@ -458,8 +458,9 @@ public class UserServiceImpl implements UserService {
                 Update update = new Update();
                 update.set("statusFlag", StatusFlag.INACTIVE.code());
                 update.set("level", Level.NORMAL);
-                update.set("checkState", false);
-                mongoTemplate.updateMulti(null, update, User.class, "user");
+                update.set("isVerified", false);
+                mongoTemplate.updateMulti(new Query(Criteria.where("lineId").ne(null)), update,
+                                User.class, "user");
                 return new BaseResponse(
                                 new BaseStatusResponse(ApiReturn.SUCCESS.code(),
                                                 ApiReturn.SUCCESS.description(),

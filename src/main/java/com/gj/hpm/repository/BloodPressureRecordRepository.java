@@ -19,11 +19,11 @@ public interface BloodPressureRecordRepository extends MongoRepository<BloodPres
 
     Optional<GetBloodPressureResponse> findByIdAndCreateById(String id, String userId);
 
-    @Query("{ '_id': ?0, 'createBy._id': ?1}")
-    Optional<BloodPressureRecord> findByIdAndCreateBy_Id(String id, String userId);
+    @Query("{ '_id': ?0, 'patient._id': ?1}")
+    Optional<BloodPressureRecord> findByIdAndPatient_Id(String id, String userId);
 
-    @Query("{ 'createBy._id': ?0 }")
-    List<GetBloodPressureResponse> findByCreateBy_Id(String userId);
+    @Query("{ 'patient._id': ?0 }")
+    List<GetBloodPressureResponse> findByPatient_Id(String userId);
 
     boolean existsByCreateDateAfterAndCreateById(LocalDateTime createDate, String createById);
 
@@ -34,5 +34,5 @@ public interface BloodPressureRecordRepository extends MongoRepository<BloodPres
     @Aggregation(pipeline = { "{ $sort: { 'createDate': -1 } }", "{ $limit: 1 }" })
     Optional<GetBloodPressureCurrentResponse> findByCurrent();
 
-    void deleteByCreateBy_Id(String createById);
+    void deleteByPatient_Id(String patientId);
 }

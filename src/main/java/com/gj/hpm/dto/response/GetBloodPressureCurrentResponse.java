@@ -19,6 +19,6 @@ public class GetBloodPressureCurrentResponse {
     public class DropdownUserResp {
         private String firstName;
         private String lastName;
-        private String hn;
+        private String hospitalNumber;
     }
 }

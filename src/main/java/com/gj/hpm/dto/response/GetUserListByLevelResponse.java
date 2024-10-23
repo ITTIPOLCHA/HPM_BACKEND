@@ -9,7 +9,7 @@ public class GetUserListByLevelResponse {
     private String id;
     private String firstName;
     private String lastName;
-    private String hn;
+    private String hospitalNumber;
     private String phone;
     private String level;
     private String pictureUrl;

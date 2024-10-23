@@ -10,7 +10,7 @@ import lombok.Setter;
 public class GetUserDetailPagingResponse extends BaseResponse {
     private String id;
     private String email;
-    private String hn;
+    private String hospitalNumber;
     private String phone;
     private String firstName;
     private String lastName;

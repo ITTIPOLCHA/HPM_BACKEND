@@ -27,7 +27,7 @@ public class GetBloodPressureResponse extends BaseResponse {
         private String id;
         private String firstName;
         private String lastName;
-        private String hn;
+        private String hospitalNumber;
     }
 
 }
