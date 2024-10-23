@@ -9,6 +9,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.StringUtils;
+import org.bson.types.ObjectId;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -60,9 +61,9 @@ import com.gj.hpm.dto.response.JwtResponse;
 import com.gj.hpm.entity.ERole;
 import com.gj.hpm.entity.Role;
 import com.gj.hpm.entity.User;
+import com.gj.hpm.repository.BloodPressureRecordRepository;
 import com.gj.hpm.repository.StmRoleRepository;
 import com.gj.hpm.repository.StmUserRepository;
-import com.gj.hpm.repository.BloodPressureRecordRepository;
 import com.gj.hpm.service.UserService;
 import com.gj.hpm.util.Constant.ApiReturn;
 import com.gj.hpm.util.Constant.Key;
@@ -73,6 +74,7 @@ import com.gj.hpm.util.Encryption;
 import com.gj.hpm.util.LineUtil;
 import com.gj.hpm.util.MongoUtil;
 import com.gj.hpm.util.ResponseUtil;
+import com.mongodb.client.result.UpdateResult;
 import com.nimbusds.jwt.JWTClaimsSet;
 
 import lombok.extern.log4j.Log4j;
@@ -402,20 +404,19 @@ public class UserServiceImpl implements UserService {
 
         @Override
         public BaseResponse updateUserCheckState(UpdateUserCheckStateRequest request) {
-                User user = stmUserRepository.findById(request.getPatientId()).orElse(null);
-                if (user != null) {
-                        user.setVerified(request.isCheckStatus());
-                        stmUserRepository.save(user);
-                        return new BaseResponse(new BaseStatusResponse(ApiReturn.SUCCESS.code(),
-                                        ApiReturn.SUCCESS.description(),
-                                        Collections.singletonList(new BaseDetailsResponse("Success ✅",
-                                                        "อัพเดทข้อมูลผู้ใช้สำเร็จ"))));
+                Update update = new Update();
+                update.set("isVerified", request.isVerified());
+                update.set("updateBy", User.builder().id(request.getActionId()).build());
+                update.set("updateDate", LocalDateTime.now());
+                UpdateResult result = mongoTemplate.updateFirst(
+                                new Query(Criteria.where("_id").is(new ObjectId(request.getPatientId()))),
+                                update, User.class, "user");
+                if (result.getMatchedCount() > 0) {
+                        return ResponseUtil.buildSuccessBaseResponse("Success ✅", "อัพเดทข้อมูลผู้ใช้สำเร็จ");
+                } else {
+                        return ResponseUtil.buildErrorBaseResponse("Not Found ❌",
+                                        "ไม่พบข้อมูลผู้ใช้");
                 }
-                return new BaseResponse(
-                                new BaseStatusResponse(ApiReturn.BAD_REQUEST.code(),
-                                                ApiReturn.BAD_REQUEST.description(),
-                                                Collections.singletonList(new BaseDetailsResponse("Not Found ❌",
-                                                                "ไม่พบข้อมูลผู้ใช้"))));
         }
 
         @Override
