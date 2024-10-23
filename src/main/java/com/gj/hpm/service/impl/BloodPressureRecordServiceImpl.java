@@ -185,6 +185,8 @@ public class BloodPressureRecordServiceImpl implements BloodPressureRecordServic
                         imageContent.put("image_url",
                                         Map.of("detail", "low", "url", base64Image));
 
+                        log.warn("!!!!" + base64Image);
+
                         userMessage.put("content", new Object[] { content, imageContent });
                         payload.put("messages", new Object[] { userMessage });
 
@@ -219,8 +221,8 @@ public class BloodPressureRecordServiceImpl implements BloodPressureRecordServic
                                 }
                         } catch (Exception e) {
                                 return ResponseUtil.buildBaseResponse(ApiReturn.BAD_REQUEST.code(),
-                                ApiReturn.BAD_REQUEST.description(), "Fail ❌",
-                                e.getMessage());
+                                                ApiReturn.BAD_REQUEST.description(), "Fail ❌",
+                                                e.getMessage());
                         }
                 }
                 return ResponseUtil.buildBaseResponse(ApiReturn.BAD_REQUEST.code(),
