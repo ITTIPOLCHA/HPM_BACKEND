@@ -22,7 +22,10 @@ import com.gj.hpm.dto.response.BaseResponse;
 import com.gj.hpm.dto.response.GetUserListByLevelResponse;
 import com.gj.hpm.dto.response.GetUserListByStatusFlagResponse;
 import com.gj.hpm.dto.response.GetUserResponse;
+import com.gj.hpm.dto.response.JwtClaimsDTO;
+import com.gj.hpm.exception.NotFoundException;
 import com.gj.hpm.service.UserService;
+import com.gj.hpm.util.ResponseUtil;
 
 @CrossOrigin(origins = "*", maxAge = 3600)
 @RestController
@@ -45,8 +48,8 @@ public class UserController {
         try {
             GetUserResponse response = userService.getUserById(request);
             return ResponseEntity.ok().body(response);
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
+        } catch (NotFoundException e) {
+            return ResponseEntity.badRequest().body(e.getResponse());
         }
     }
 
@@ -55,10 +58,15 @@ public class UserController {
     public ResponseEntity<?> getUserByToken(@RequestHeader("Authorization") String token,
             @RequestBody BaseRequest request) {
         try {
-            GetUserResponse response = userService.getUserByToken(jwtUtils.getEmailFromHeader(token));
+            JwtClaimsDTO claims = jwtUtils.decodeJwtClaimsDTO(token);
+            if (claims == null) {
+                return ResponseEntity.badRequest().body(
+                        ResponseUtil.buildErrorBaseResponse("Invalid Token ❌", "Token ไม่ถูกต้อง"));
+            }
+            GetUserResponse response = userService.getUserByToken(claims.getJwtId());
             return ResponseEntity.ok().body(response);
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
+        } catch (NotFoundException e) {
+            return ResponseEntity.badRequest().body(e.getResponse());
         }
     }
 
@@ -102,7 +110,12 @@ public class UserController {
     public ResponseEntity<?> updateUserById(@RequestHeader("Authorization") String token,
             @RequestBody UpdateUserByIdRequest request) {
         try {
-            BaseResponse response = userService.updateUserById(jwtUtils.getIdFromHeader(token), request);
+            JwtClaimsDTO claims = jwtUtils.decodeJwtClaimsDTO(token);
+            if (claims == null) {
+                return ResponseEntity.badRequest().body(
+                        ResponseUtil.buildErrorBaseResponse("Invalid Token ❌", "Token ไม่ถูกต้อง"));
+            }
+            BaseResponse response = userService.updateUserById(claims.getJwtId(), request);
             return ResponseEntity.ok().body(response);
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());
@@ -114,7 +127,12 @@ public class UserController {
     public ResponseEntity<?> updateUserByToken(@RequestHeader("Authorization") String token,
             @RequestBody UpdateUserByTokenRequest request) {
         try {
-            BaseResponse response = userService.updateUserByToken(jwtUtils.getIdFromHeader(token), request);
+            JwtClaimsDTO claims = jwtUtils.decodeJwtClaimsDTO(token);
+            if (claims == null) {
+                return ResponseEntity.badRequest().body(
+                        ResponseUtil.buildErrorBaseResponse("Invalid Token ❌", "Token ไม่ถูกต้อง"));
+            }
+            BaseResponse response = userService.updateUserByToken(claims.getJwtId(), request);
             return ResponseEntity.ok().body(response);
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());
@@ -149,7 +167,12 @@ public class UserController {
     public ResponseEntity<?> deleteUserByToken(@RequestHeader("Authorization") String token,
             @RequestBody BaseRequest request) {
         try {
-            BaseResponse response = userService.deleteUserByToken(jwtUtils.getIdFromHeader(token), request);
+            JwtClaimsDTO claims = jwtUtils.decodeJwtClaimsDTO(token);
+            if (claims == null) {
+                return ResponseEntity.badRequest().body(
+                        ResponseUtil.buildErrorBaseResponse("Invalid Token ❌", "Token ไม่ถูกต้อง"));
+            }
+            BaseResponse response = userService.deleteUserByToken(claims.getJwtId(), request);
             return ResponseEntity.ok().body(response);
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());

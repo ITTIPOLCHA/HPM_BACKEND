@@ -42,7 +42,6 @@ import com.gj.hpm.dto.request.UpdateBloodPressureByIdRequest;
 import com.gj.hpm.dto.request.UpdateBloodPressureByTokenRequest;
 import com.gj.hpm.dto.response.BaseResponse;
 import com.gj.hpm.dto.response.GetBloodPressureDetailPagingResponse;
-import com.gj.hpm.dto.response.GetBloodPressurePagingResponse;
 import com.gj.hpm.dto.response.GetBloodPressureResponse;
 import com.gj.hpm.dto.response.JwtClaimsDTO;
 import com.gj.hpm.entity.BloodPressureRecord;
