@@ -30,6 +30,7 @@ import org.springframework.web.client.RestTemplate;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.gj.hpm.dto.PageableDto;
 import com.gj.hpm.dto.request.CreateBloodPressureRequest;
 import com.gj.hpm.dto.request.DeleteBloodPressureByIdRequest;
 import com.gj.hpm.dto.request.DeleteBloodPressureByTokenRequest;
@@ -91,7 +92,6 @@ public class BloodPressureRecordServiceImpl implements BloodPressureRecordServic
         public BaseResponse createBloodPressure(JwtClaimsDTO dto, CreateBloodPressureRequest request) {
                 // Can't find it user.
                 if (!stmUserRepository.existsById(dto.getJwtId())) {
-                        log.error("createBloodPressure : ไม่พบข้อมูลผู้ใช้งาน");
                         return ResponseUtil.buildBaseResponse(ApiReturn.BAD_REQUEST.code(),
                                         ApiReturn.BAD_REQUEST.description(), "Not Found ❌",
                                         "ไม่พบข้อมูลผู้ใช้งาน");
@@ -101,7 +101,6 @@ public class BloodPressureRecordServiceImpl implements BloodPressureRecordServic
                 if (stpBloodPressureRepository
                                 .existsByCreateDateAfterAndCreateById(LocalDateTime.now().minusHours(1),
                                                 dto.getJwtId())) {
-                        log.error("createBloodPressure : ข้อมูลความดันโลหิตถูกบันทึกไปแล้ว ใน 1 ชั่วโมงนี้");
                         return ResponseUtil.buildBaseResponse(ApiReturn.BAD_REQUEST.code(),
                                         ApiReturn.BAD_REQUEST.description(), "Fail ❌",
                                         "ข้อมูลความดันโลหิตถูกบันทึกไปแล้ว ใน 1 ชั่วโมงนี้");
@@ -114,27 +113,36 @@ public class BloodPressureRecordServiceImpl implements BloodPressureRecordServic
                 bloodPressure.setPatient(User.builder().id(dto.getJwtId()).build());
                 bloodPressure.setCreateBy(User.builder().id(dto.getJwtId()).build());
                 bloodPressure.setStatusFlag(StatusFlag.ACTIVE.code());
-                log.info("createBloodPressure : เซฟแล้ว");
                 stpBloodPressureRepository.save(bloodPressure);
 
                 Update update = new Update();
                 String msg = new String();
                 update.set("statusFlag", StatusFlag.ACTIVE.code());
-                if (request.getSystolicPressure() > 175 || request.getDiastolicPressure() > 105) {
-                        update.set("level", Level.DANGER);
+                if (request.getSystolicPressure() >= 140 && request.getDiastolicPressure() < 90) {
+                        update.set("level", Level.ISOLATED);
+                        msg = "ระดับ ความดันโลหิตสูงเฉพาะซิสโตลิก คือ ตัวบนสูงกว่าเท่ากับ 140 และตัวล่างน้อยกว่า 90";
+                } else if (request.getSystolicPressure() >= 180 || request.getDiastolicPressure() >= 110) {
+                        update.set("level", Level.GRADE3);
                         msg = "ระดับ ความดันโลหิตสูงระยะรุนแรง คำแนะนำ รีบพบแพทย์โดยด่วน";
-                } else if (request.getSystolicPressure() > 155
-                                || request.getDiastolicPressure() > 95) {
-                        update.set("level", Level.WARNING2);
+                } else if (request.getSystolicPressure() >= 160 || request.getDiastolicPressure() >= 100) {
+                        update.set("level", Level.GRADE2);
+                        msg = "ระดับ ความดันโลหิตสูงระยะปานกลาง คำแนะนำ โทรปรึกษาแพทย์เพื่อวินิจฉัย";
+                } else if (request.getSystolicPressure() >= 140 || request.getDiastolicPressure() >= 90) {
+                        update.set("level", Level.GRADE1);
                         msg = "ระดับ ความดันโลหิตสูงระยะเริ่มแรก คำแนะนำ พบแพทย์เพื่อวินิจฉัย";
-                } else if (request.getSystolicPressure() > 135
-                                || request.getDiastolicPressure() > 85) {
-                        update.set("level", Level.WARNING1);
-                        msg = "ระดับ ความดันโลหิตสูงกว่าปกติ คำแนะนำ ปรึกษาแพทย์";
-                } else {
+                } else if (request.getSystolicPressure() >= 130 || request.getDiastolicPressure() >= 85) {
+                        update.set("level", Level.HIGH);
+                        update.set("verified", true);
+                        msg = "ระดับ ความดันโลหิตสูงกว่าปกติ แต่ยังไม่เป็นโรคความดันโหลิตสูง คำแนะนำ ควบคุมอาหาร, การจำกัดเกลือในอาหาร, ออกกำลังกาย, วัดความดันอยู่เสมอ, การลดการดื่มแอลกอฮอล์";
+                } else if (request.getSystolicPressure() >= 120 && request.getSystolicPressure() <= 129
+                                && request.getDiastolicPressure() < 85) {
                         update.set("level", Level.NORMAL);
                         update.set("verified", true);
                         msg = "ระดับ ปกคิ คำแนะนำ ควบคุมอาหาร, ออกกำลังกาย, วัดความดันอยู่เสมอ";
+                } else {
+                        update.set("level", Level.OPTIMAL);
+                        update.set("verified", true);
+                        msg = "ระดับ เหมาะสม สิ่งที่ทำอยู่ดีอยู่แล้วพยายามต่อไปครับ";
                 }
                 mongoTemplate.updateFirst(new Query(Criteria.where("_id").is(new ObjectId(dto.getJwtId()))), update,
                                 User.class,
@@ -147,7 +155,6 @@ public class BloodPressureRecordServiceImpl implements BloodPressureRecordServic
                                                 + "Sys : " + request.getSystolicPressure() + ",\n"
                                                 + "Dia : " + request.getDiastolicPressure() + ",\n"
                                                 + "Pul : " + request.getPulseRate() + "\n " + msg))) {
-                        log.error("createBloodPressure : ส่งข้อความไม่สำเร็จ");
                         return ResponseUtil.buildBaseResponse(
                                         ApiReturn.BAD_REQUEST.code(),
                                         ApiReturn.BAD_REQUEST.description(), "Error ❌", "ส่งข้อความไม่สำเร็จ.");
@@ -159,47 +166,31 @@ public class BloodPressureRecordServiceImpl implements BloodPressureRecordServic
 
         @Override
         public BaseResponse uploadImage(JwtClaimsDTO dto, String base64Image) {
-                log.info("uploadImage : เข้ามาแล้ว");
                 if (!stpBloodPressureRepository
                                 .existsByCreateDateAfterAndCreateById(LocalDateTime.now().minusHours(1),
                                                 dto.getJwtId())) {
-                        log.info("uploadImage : ไม่มีการส่งใน 1 ชมที่แล้ว");
-                        // Set up headers
+                        // Set up
                         HttpHeaders headers = new HttpHeaders();
                         headers.setContentType(MediaType.APPLICATION_JSON);
                         headers.setBearerAuth(apiKey);
-
-                        // Create the payload
                         Map<String, Object> payload = new HashMap<>();
                         payload.put("model", "gpt-4o");
-
                         Map<String, Object> userMessage = new HashMap<>();
                         userMessage.put("role", "user");
-
                         Map<String, Object> content = new HashMap<>();
                         content.put("type", "text");
                         content.put("text", "systolic, diastolic, pulse require json from only.");
-
                         Map<String, Object> imageContent = new HashMap<>();
                         imageContent.put("type", "image_url");
                         imageContent.put("image_url",
                                         Map.of("detail", "low", "url", base64Image));
-
-                        log.warn("!!!!" + base64Image);
-
                         userMessage.put("content", new Object[] { content, imageContent });
                         payload.put("messages", new Object[] { userMessage });
-
-                        // Prepare the request entity
                         HttpEntity<Map<String, Object>> requestEntity = new HttpEntity<>(payload, headers);
-
                         try {
-                                log.info("uploadImage : กำลังส่งไป chat gpt");
                                 @SuppressWarnings("unchecked")
                                 Map<String, Object> response = restTemplate
                                                 .exchange(apiUrl, HttpMethod.POST, requestEntity, Map.class).getBody();
-                                log.info("uploadImage : ส่งสำเร็จ");
-
                                 // Extract and return the response
                                 if (response != null && response.containsKey("choices")) {
                                         @SuppressWarnings("unchecked")
@@ -208,15 +199,13 @@ public class BloodPressureRecordServiceImpl implements BloodPressureRecordServic
                                         String jsonString = result.substring(result.indexOf("{"));
                                         ObjectMapper objectMapper = new ObjectMapper();
                                         JsonNode rootNode = objectMapper.readTree(jsonString);
-
-                                        int sys = rootNode.get("systolic").asInt();
-                                        int dia = rootNode.get("diastolic").asInt();
-                                        int pul = rootNode.get("pulse").asInt();
-                                        log.info("uploadImage : sys-{} dia-{} pul-{}", sys, dia, pul);
+                                        int systolic = rootNode.get("systolic").asInt();
+                                        int diastolic = rootNode.get("diastolic").asInt();
+                                        int pulse = rootNode.get("pulse").asInt();
                                         CreateBloodPressureRequest bloodPressureRequest = new CreateBloodPressureRequest();
-                                        bloodPressureRequest.setSystolicPressure(sys);
-                                        bloodPressureRequest.setDiastolicPressure(dia);
-                                        bloodPressureRequest.setPulseRate(pul);
+                                        bloodPressureRequest.setSystolicPressure(systolic);
+                                        bloodPressureRequest.setDiastolicPressure(diastolic);
+                                        bloodPressureRequest.setPulseRate(pulse);
                                         return createBloodPressure(dto, bloodPressureRequest);
                                 }
                         } catch (Exception e) {
@@ -252,19 +241,9 @@ public class BloodPressureRecordServiceImpl implements BloodPressureRecordServic
 
         @Override
         @Transactional(readOnly = true)
-        public GetBloodPressurePagingResponse getBloodPressurePaging(GetBloodPressurePagingRequest request) {
+        public BaseResponse getBloodPressurePaging(GetBloodPressurePagingRequest request) {
                 Page<GetBloodPressureDetailPagingResponse> content = findByAggregation(request);
-                GetBloodPressurePagingResponse response = new GetBloodPressurePagingResponse();
-                response.setContent(content.getContent());
-                response.setTotalPages(content.getTotalPages());
-                response.setTotalElements(content.getTotalElements());
-                response.setFirst(content.isFirst());
-                response.setLast(content.isLast());
-                response.setNumberOfElements(content.getNumberOfElements());
-                response.setSize(content.getSize());
-                response.setNumber(content.getNumber());
-                response.setEmpty(content.isEmpty());
-                return response;
+                return new PageableDto<>(content);
         }
 
         private Page<GetBloodPressureDetailPagingResponse> findByAggregation(GetBloodPressurePagingRequest request) {
@@ -310,21 +289,11 @@ public class BloodPressureRecordServiceImpl implements BloodPressureRecordServic
 
         @Override
         @Transactional(readOnly = true)
-        public GetBloodPressurePagingResponse getBloodPressurePagingByUserId(JwtClaimsDTO dto,
+        public BaseResponse getBloodPressurePagingByUserId(JwtClaimsDTO dto,
                         GetBloodPressureByTokenPagingRequest request) {
                 Page<GetBloodPressureDetailPagingResponse> content = findByAggregationFromToken(dto.getJwtId(),
                                 request);
-                GetBloodPressurePagingResponse response = new GetBloodPressurePagingResponse();
-                response.setContent(content.getContent());
-                response.setTotalPages(content.getTotalPages());
-                response.setTotalElements(content.getTotalElements());
-                response.setFirst(content.isFirst());
-                response.setLast(content.isLast());
-                response.setNumberOfElements(content.getNumberOfElements());
-                response.setSize(content.getSize());
-                response.setNumber(content.getNumber());
-                response.setEmpty(content.isEmpty());
-                return response;
+                return new PageableDto<>(content);
         }
 
         private Page<GetBloodPressureDetailPagingResponse> findByAggregationFromToken(String id,
@@ -415,10 +384,8 @@ public class BloodPressureRecordServiceImpl implements BloodPressureRecordServic
                 DeleteResult result = mongoTemplate.remove(query, BloodPressureRecord.class, "bloodPressureRecord");
 
                 if (result.getDeletedCount() > 0) {
-                        log.info("ลบข้อมูลความดันโลหิตสำเร็จสำหรับข้อมูล: {}", request.getBloodPressureId());
                         return ResponseUtil.buildSuccessBaseResponse("Success ✅", "ลบข้อมูลความดันโลหิตสำเร็จ");
                 } else {
-                        log.error("ไม่พบข้อมูลความดันโลหิตสำหรับการลบ: {}", request.getBloodPressureId());
                         return ResponseUtil.buildErrorBaseResponse("Not Found ❌",
                                         "ไม่พบข้อมูลความดันโลหิตที่ต้องการลบ");
                 }
@@ -434,10 +401,8 @@ public class BloodPressureRecordServiceImpl implements BloodPressureRecordServic
                 DeleteResult result = mongoTemplate.remove(query, BloodPressureRecord.class, "bloodPressureRecord");
 
                 if (result.getDeletedCount() > 0) {
-                        log.info("ลบข้อมูลความดันโลหิตสำเร็จสำหรับผู้ใช้: {}", dto.getJwtId());
                         return ResponseUtil.buildSuccessBaseResponse("Success ✅", "ลบข้อมูลความดันโลหิตสำเร็จ");
                 } else {
-                        log.error("ไม่พบข้อมูลความดันโลหิตสำหรับการลบ: {}", request.getBloodPressureId());
                         return ResponseUtil.buildErrorBaseResponse("Not Found ❌",
                                         "ไม่พบข้อมูลความดันโลหิตที่ต้องการลบ");
                 }

@@ -258,9 +258,13 @@ public class Constant {
         }
 
         public enum Level {
-                NORMAL("NORMAL", "Normal", "ปกติ"), WARNING1("WARNING1", "Warning1", "คำเตือน1"),
-                WARNING2("WARNING2", "Warning2", "คำเตือน2"),
-                DANGER("DANGER", "Danger", "อันตราย");
+                OPTIMAL("OPTIMAL","Optimal","เหมาะสม"),
+                NORMAL("NORMAL", "Normal", "ปกติ"),
+                HIGH("HIGH", "High Normal", "สูงกว่าเกณฑ์ปกติ"),
+                GRADE1("GRADE1", "Grade 1 Mild", "ระดับที่ 1"),
+                GRADE2("GRADE2", "Grade 2 Moderate", "ระดับที่ 2"),
+                GRADE3("GRADE3", "Grade 3 Severe", "ระดับที่ 3"),
+                ISOLATED("ISOLATED", "Isolated Systolic Hypertension", "เฉพาะซิสโตลิก");
 
                 private final String code;
                 private final String valueEn;

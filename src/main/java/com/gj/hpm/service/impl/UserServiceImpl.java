@@ -58,9 +58,11 @@ import com.gj.hpm.dto.response.GetUserListByLevelResponse;
 import com.gj.hpm.dto.response.GetUserListByStatusFlagResponse;
 import com.gj.hpm.dto.response.GetUserResponse;
 import com.gj.hpm.dto.response.JwtResponse;
+import com.gj.hpm.entity.BloodPressureRecord;
 import com.gj.hpm.entity.ERole;
 import com.gj.hpm.entity.Role;
 import com.gj.hpm.entity.User;
+import com.gj.hpm.exception.NotFoundException;
 import com.gj.hpm.repository.BloodPressureRecordRepository;
 import com.gj.hpm.repository.StmRoleRepository;
 import com.gj.hpm.repository.StmUserRepository;
@@ -204,15 +206,13 @@ public class UserServiceImpl implements UserService {
                         user.setStatusFlag(StatusFlag.INACTIVE.code());
                         if (!new LineUtil().changeRichmenu(user.getLineId(),
                                         richMenu, token))
-                                return ResponseUtil.buildBaseResponse(ApiReturn.BAD_REQUEST.code(),
-                                                ApiReturn.BAD_REQUEST.description(),
+                                return ResponseUtil.buildErrorBaseResponse(
                                                 "เกิดข้อผิดพลาด ❌",
                                                 "เปลี่ยน Rich menu ไม่ได้.");
                         if (!new LineUtil().sentMessage(user.getLineId(),
                                         token, ("ระบบได้บันทึกข้อมูลของ " + request.getFirstName()
                                                         + " เรียบร้อยแล้ว✅ ท่านสามารถเลือกเมนู \nดูประวัติ เพื่อดูประวัติการส่งผลวัดความดันโลหิต หรือ \nส่งผลวัด เพื่อส่งผลวัดความดันโลหิตได้เลยครับ")))
-                                return ResponseUtil.buildBaseResponse(ApiReturn.BAD_REQUEST.code(),
-                                                ApiReturn.BAD_REQUEST.description(),
+                                return ResponseUtil.buildErrorBaseResponse(
                                                 "เกิดข้อผิดพลาด ❌",
                                                 "ส่งข้อความไม่สำเร็จ.");
                 }
@@ -224,8 +224,7 @@ public class UserServiceImpl implements UserService {
                 user.setCreateBy(User.builder().id(user.getId()).build());
                 user.setUpdateBy(User.builder().id(user.getId()).build());
                 stmUserRepository.save(user);
-                return ResponseUtil.buildBaseResponse(ApiReturn.SUCCESS.code(),
-                                ApiReturn.SUCCESS.description(), "Success ✅",
+                return ResponseUtil.buildSuccessBaseResponse("Success ✅",
                                 "สมัครสมาชิกสำเร็จ");
         }
 
@@ -245,25 +244,25 @@ public class UserServiceImpl implements UserService {
         @Override
         @Transactional(readOnly = true)
         public GetUserResponse getUserById(GetUserByIdRequest request) {
-                GetUserResponse response = stmUserRepository.findGetUserByIdRespByUser_id(request.getUserId())
-                                .orElse(new GetUserResponse());
-                if (response.getId() != null)
-                        return response;
-                response.setStatus(ResponseUtil.buildBaseStatusResponse(ApiReturn.BAD_REQUEST.code(),
-                                ApiReturn.BAD_REQUEST.description(), "Not Found ❌", "ไม่พบข้อมูลผู้ใช้"));
-                return response;
+                return stmUserRepository.findGetUserByIdRespByUser_id(request.getUserId())
+                                .orElseThrow(() -> new NotFoundException(
+                                                ResponseUtil.buildBaseResponse(
+                                                                ApiReturn.BAD_REQUEST.code(),
+                                                                ApiReturn.BAD_REQUEST.description(),
+                                                                "Not Found ❌",
+                                                                "ไม่พบข้อมูลผู้ใช้")));
         }
 
         @Override
         @Transactional(readOnly = true)
         public GetUserResponse getUserByToken(String email) {
-                GetUserResponse response = stmUserRepository.findGetUserByTokenRespByEmail(email)
-                                .orElse(new GetUserResponse());
-                if (response.getId() != null)
-                        return response;
-                response.setStatus(ResponseUtil.buildBaseStatusResponse(ApiReturn.BAD_REQUEST.code(),
-                                ApiReturn.BAD_REQUEST.description(), "Not Found ❌", "ไม่พบข้อมูลผู้ใช้"));
-                return response;
+                return stmUserRepository.findGetUserByTokenRespByEmail(email)
+                                .orElseThrow(() -> new NotFoundException(
+                                                ResponseUtil.buildBaseResponse(
+                                                                ApiReturn.BAD_REQUEST.code(),
+                                                                ApiReturn.BAD_REQUEST.description(),
+                                                                "Not Found ❌",
+                                                                "ไม่พบข้อมูลผู้ใช้")));
         }
 
         // ! ==============================
@@ -300,7 +299,7 @@ public class UserServiceImpl implements UserService {
                 } else {
                         criteria.and("statusFlag").ne(StatusFlag.DELETE.code());
                 }
-                criteria.and("lineId").ne(null); // find only paint
+                criteria.and("lineId").ne(null);
                 addCriteriaIfNotEmpty(criteria, "firstName", request.getFirstName());
                 addCriteriaIfNotEmpty(criteria, "lastName", request.getLastName());
                 addCriteriaIfNotEmpty(criteria, "email", request.getEmail());
@@ -320,18 +319,20 @@ public class UserServiceImpl implements UserService {
         @Transactional(readOnly = true)
         public List<GetUserListByLevelResponse> getUserListByLevel() {
                 CaseOperator[] conditions = new CaseOperator[] {
-                                CaseOperator.when(ComparisonOperators.valueOf("level").equalToValue("DANGER")).then(3),
-                                CaseOperator.when(ComparisonOperators.valueOf("level").equalToValue("WARNING2"))
-                                                .then(2),
-                                CaseOperator.when(ComparisonOperators.valueOf("level").equalToValue("WARNING1")).then(1)
+                                CaseOperator.when(ComparisonOperators.valueOf("level").equalToValue("ISOLATED"))
+                                                .then(4),
+                                CaseOperator.when(ComparisonOperators.valueOf("level").equalToValue("GRADE3")).then(3),
+                                CaseOperator.when(ComparisonOperators.valueOf("level").equalToValue("GRADE2")).then(2),
+                                CaseOperator.when(ComparisonOperators.valueOf("level").equalToValue("GRADE1")).then(1)
                 };
 
                 ConditionalOperators.Switch switchCases = ConditionalOperators.switchCases(conditions)
                                 .defaultTo(0);
 
                 TypedAggregation<User> aggregation = Aggregation.newAggregation(User.class,
-                                Aggregation.match(Criteria.where("lineId").exists(true)),
-                                Aggregation.match(Criteria.where("level").ne("NORMAL")),
+                                Aggregation.match(
+                                                Criteria.where("lineId").exists(true)
+                                                                .and("level").not().in("HIGH", "NORMAL", "OPTIMAL")),
                                 Aggregation.addFields()
                                                 .addFieldWithValue("newLevel", switchCases)
                                                 .build(),
@@ -344,9 +345,9 @@ public class UserServiceImpl implements UserService {
         @Override
         public List<GetUserListByStatusFlagResponse> getUserListByStatusFlag() {
                 TypedAggregation<User> aggregation = Aggregation.newAggregation(User.class,
-                                Aggregation.match(Criteria.where("lineId").exists(true)),
-                                Aggregation.match(Criteria.where("statusFlag").is(StatusFlag.INACTIVE.toString())),
-                                Aggregation.sort(Sort.Direction.ASC, "hn"));
+                                Aggregation.match(Criteria.where("lineId").exists(true).and("statusFlag")
+                                                .is(StatusFlag.INACTIVE.toString())),
+                                Aggregation.sort(Sort.Direction.ASC, "hospitalNumber"));
 
                 return mongoTemplate.aggregate(aggregation, "user",
                                 GetUserListByStatusFlagResponse.class).getMappedResults();
@@ -354,52 +355,45 @@ public class UserServiceImpl implements UserService {
 
         @Override
         public BaseResponse updateUserById(String id, UpdateUserByIdRequest request) {
-                User user = stmUserRepository.findById(request.getUserId()).orElse(null);
-                if (user != null) {
-                        user.setFirstName(request.getFirstName());
-                        user.setLastName(request.getLastName());
-                        user.setEmail(request.getEmail());
-                        user.setUsername(request.getEmail());
-                        user.setPhoneNumber(request.getPhoneNumber());
-                        user.setHospitalNumber(request.getHospitalNumber());
-                        user.setUpdateBy(User.builder().id(id).build());
-                        user.setUpdateDate(LocalDateTime.now());
-                        stmUserRepository.save(user);
-                        return new BaseResponse(new BaseStatusResponse(ApiReturn.SUCCESS.code(),
-                                        ApiReturn.SUCCESS.description(),
-                                        Collections.singletonList(new BaseDetailsResponse("Success ✅",
-                                                        "อัพเดทข้อมูลผู้ใช้สำเร็จ"))));
+                Update update = new Update();
+                update.set("firstName", request.getFirstName());
+                update.set("lastName", request.getLastName());
+                update.set("email", request.getEmail());
+                update.set("username", request.getEmail());
+                update.set("phoneNumber", request.getPhoneNumber());
+                update.set("hospitalNumber", request.getHospitalNumber());
+                update.set("updateBy", User.builder().id(request.getActionId()).build());
+                update.set("updateDate", LocalDateTime.now());
+                UpdateResult result = mongoTemplate.updateFirst(
+                                new Query(Criteria.where("_id").is(new ObjectId(request.getUserId()))),
+                                update, User.class, "user");
+                if (result.getMatchedCount() > 0) {
+                        return ResponseUtil.buildSuccessBaseResponse("Success ✅", "อัพเดทข้อมูลผู้ใช้สำเร็จ");
+                } else {
+                        return ResponseUtil.buildErrorBaseResponse("Not Found ❌",
+                                        "ไม่พบข้อมูลผู้ใช้");
                 }
-                return new BaseResponse(
-                                new BaseStatusResponse(ApiReturn.BAD_REQUEST.code(),
-                                                ApiReturn.BAD_REQUEST.description(),
-                                                Collections.singletonList(new BaseDetailsResponse("Not Found ❌",
-                                                                "ไม่พบข้อมูลผู้ใช้"))));
         }
 
         @Override
         public BaseResponse updateUserByToken(String id, UpdateUserByTokenRequest request) {
-                User user = stmUserRepository.findById(id).orElse(null);
-                if (user != null) {
-                        user.setFirstName(request.getFirstName());
-                        user.setLastName(request.getLastName());
-                        user.setEmail(request.getEmail());
-                        user.setUsername(request.getEmail());
-                        user.setPhoneNumber(request.getPhoneNumber());
-                        user.setHospitalNumber(request.getHospitalNumber());
-                        user.setUpdateBy(User.builder().id(id).build());
-                        user.setUpdateDate(LocalDateTime.now());
-                        stmUserRepository.save(user);
-                        return new BaseResponse(new BaseStatusResponse(ApiReturn.SUCCESS.code(),
-                                        ApiReturn.SUCCESS.description(),
-                                        Collections.singletonList(new BaseDetailsResponse("Success ✅",
-                                                        "อัพเดทข้อมูลผู้ใช้สำเร็จ"))));
+                Update update = new Update();
+                update.set("firstName", request.getFirstName());
+                update.set("lastName", request.getLastName());
+                update.set("email", request.getEmail());
+                update.set("username", request.getEmail());
+                update.set("phoneNumber", request.getPhoneNumber());
+                update.set("hospitalNumber", request.getHospitalNumber());
+                update.set("updateBy", User.builder().id(request.getActionId()).build());
+                update.set("updateDate", LocalDateTime.now());
+                UpdateResult result = mongoTemplate.updateFirst(
+                                new Query(Criteria.where("_id").is(new ObjectId(id))),
+                                update, User.class, "user");
+                if (result.getMatchedCount() > 0) {
+                        return ResponseUtil.buildSuccessBaseResponse("Success ✅", "อัพเดทข้อมูลผู้ใช้สำเร็จ");
+                } else {
+                        return ResponseUtil.buildErrorBaseResponse("Not Found ❌", "ไม่พบข้อมูลผู้ใช้");
                 }
-                return new BaseResponse(
-                                new BaseStatusResponse(ApiReturn.BAD_REQUEST.code(),
-                                                ApiReturn.BAD_REQUEST.description(),
-                                                Collections.singletonList(new BaseDetailsResponse("Not Found ❌",
-                                                                "ไม่พบข้อมูลผู้ใช้"))));
         }
 
         @Override
@@ -414,8 +408,7 @@ public class UserServiceImpl implements UserService {
                 if (result.getMatchedCount() > 0) {
                         return ResponseUtil.buildSuccessBaseResponse("Success ✅", "อัพเดทข้อมูลผู้ใช้สำเร็จ");
                 } else {
-                        return ResponseUtil.buildErrorBaseResponse("Not Found ❌",
-                                        "ไม่พบข้อมูลผู้ใช้");
+                        return ResponseUtil.buildErrorBaseResponse("Not Found ❌", "ไม่พบข้อมูลผู้ใช้");
                 }
         }
 
@@ -423,18 +416,11 @@ public class UserServiceImpl implements UserService {
         public BaseResponse deleteUserById(GetUserByIdRequest request) {
                 boolean verify = stmUserRepository.existsById(request.getUserId());
                 if (verify) {
-                        stmUserRepository.deleteById(request.getUserId());
                         stpBloodPressureRepository.deleteByPatient_Id(request.getUserId());
-                        return new BaseResponse(new BaseStatusResponse(ApiReturn.SUCCESS.code(),
-                                        ApiReturn.SUCCESS.description(),
-                                        Collections.singletonList(
-                                                        new BaseDetailsResponse("Success ✅", "ลบข้อมูลผู้ใช้สำเร็จ"))));
+                        stmUserRepository.deleteById(request.getUserId());
+                        return ResponseUtil.buildSuccessBaseResponse("Success ✅", "ลบข้อมูลผู้ใช้สำเร็จ");
                 }
-                return new BaseResponse(
-                                new BaseStatusResponse(ApiReturn.BAD_REQUEST.code(),
-                                                ApiReturn.BAD_REQUEST.description(),
-                                                Collections.singletonList(new BaseDetailsResponse("Not Found ❌",
-                                                                "ไม่พบข้อมูลผู้ใช้"))));
+                return ResponseUtil.buildErrorBaseResponse("Not Found ❌", "ไม่พบข้อมูลผู้ใช้");
         }
 
         @Override
@@ -442,16 +428,9 @@ public class UserServiceImpl implements UserService {
                 boolean verify = stmUserRepository.existsById(id);
                 if (verify) {
                         stmUserRepository.deleteById(id);
-                        return new BaseResponse(new BaseStatusResponse(ApiReturn.SUCCESS.code(),
-                                        ApiReturn.SUCCESS.description(),
-                                        Collections.singletonList(
-                                                        new BaseDetailsResponse("Success ✅", "ลบข้อมูลผู้ใช้สำเร็จ"))));
+                        return ResponseUtil.buildSuccessBaseResponse("Success ✅", "ลบข้อมูลผู้ใช้สำเร็จ");
                 }
-                return new BaseResponse(
-                                new BaseStatusResponse(ApiReturn.BAD_REQUEST.code(),
-                                                ApiReturn.BAD_REQUEST.description(),
-                                                Collections.singletonList(new BaseDetailsResponse("Not Found ❌",
-                                                                "ไม่พบข้อมูลผู้ใช้"))));
+                return ResponseUtil.buildErrorBaseResponse("Not Found ❌", "ไม่พบข้อมูลผู้ใช้");
         }
 
         @Override
@@ -462,12 +441,7 @@ public class UserServiceImpl implements UserService {
                 update.set("verified", false);
                 mongoTemplate.updateMulti(new Query(Criteria.where("lineId").ne(null)), update,
                                 User.class, "user");
-                return new BaseResponse(
-                                new BaseStatusResponse(ApiReturn.SUCCESS.code(),
-                                                ApiReturn.SUCCESS.description(),
-                                                Collections.singletonList(
-                                                                new BaseDetailsResponse("Success ✅",
-                                                                                "เปลี่ยนสถานะเป็น Inactive สำเร็จ"))));
+                return ResponseUtil.buildSuccessBaseResponse("Success ✅", "เปลี่ยนสถานะเป็น Inactive สำเร็จ");
         }
 
         @Override
@@ -480,25 +454,13 @@ public class UserServiceImpl implements UserService {
                                 user.setPassword(encoder.encode(request.getNewPassword()));
                                 user.setUpdateDate(LocalDateTime.now());
                                 stmUserRepository.save(user);
-                                return new BaseResponse(new BaseStatusResponse(ApiReturn.SUCCESS.code(),
-                                                ApiReturn.SUCCESS.description(),
-                                                Collections.singletonList(
-                                                                new BaseDetailsResponse("Success ✅",
-                                                                                "เปลี่ยนรหัสผ่านสำเร็จ"))));
+                                return ResponseUtil.buildSuccessBaseResponse("Success ✅", "เปลี่ยนรหัสผ่านสำเร็จ");
                         } else {
-                                return new BaseResponse(
-                                                new BaseStatusResponse(ApiReturn.BAD_REQUEST.code(),
-                                                                ApiReturn.BAD_REQUEST.description(),
-                                                                Collections.singletonList(new BaseDetailsResponse(
-                                                                                "Bad Request ❌",
-                                                                                "รหัสผ่านไม่ตรงกับรหัสเก่า"))));
+                                return ResponseUtil.buildErrorBaseResponse("Bad Request ❌",
+                                                "รหัสผ่านไม่ตรงกับรหัสเก่า");
                         }
                 } else {
-                        return new BaseResponse(
-                                        new BaseStatusResponse(ApiReturn.BAD_REQUEST.code(),
-                                                        ApiReturn.BAD_REQUEST.description(),
-                                                        Collections.singletonList(new BaseDetailsResponse("Not Found ❌",
-                                                                        "ไม่พบข้อมูลผู้ใช้"))));
+                        return ResponseUtil.buildErrorBaseResponse("Not Found ❌", "ไม่พบข้อมูลผู้ใช้");
                 }
         }
 
@@ -512,17 +474,9 @@ public class UserServiceImpl implements UserService {
                         user.setPassword(encoder.encode(request.getNewPassword()));
                         user.setUpdateDate(LocalDateTime.now());
                         stmUserRepository.save(user);
-                        return new BaseResponse(new BaseStatusResponse(ApiReturn.SUCCESS.code(),
-                                        ApiReturn.SUCCESS.description(),
-                                        Collections.singletonList(
-                                                        new BaseDetailsResponse("Success ✅",
-                                                                        "เปลี่ยนรหัสผ่านสำเร็จ"))));
+                        return ResponseUtil.buildSuccessBaseResponse("Success ✅", "เปลี่ยนรหัสผ่านสำเร็จ");
                 } else {
-                        return new BaseResponse(
-                                        new BaseStatusResponse(ApiReturn.BAD_REQUEST.code(),
-                                                        ApiReturn.BAD_REQUEST.description(),
-                                                        Collections.singletonList(new BaseDetailsResponse("Not Found ❌",
-                                                                        "ไม่พบข้อมูลผู้ใช้"))));
+                        return ResponseUtil.buildErrorBaseResponse("Not Found ❌", "ไม่พบข้อมูลผู้ใช้");
                 }
         }
 

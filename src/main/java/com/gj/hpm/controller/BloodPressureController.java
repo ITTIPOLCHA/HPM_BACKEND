@@ -107,7 +107,7 @@ public class BloodPressureController {
     public ResponseEntity<?> getBloodPressurePaging(@RequestHeader("Authorization") String token,
             @RequestBody GetBloodPressurePagingRequest request) {
         try {
-            GetBloodPressurePagingResponse response = bloodPressureService.getBloodPressurePaging(request);
+            BaseResponse response = bloodPressureService.getBloodPressurePaging(request);
             return ResponseEntity.ok().body(response);
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());
@@ -140,7 +140,7 @@ public class BloodPressureController {
                 return ResponseEntity.badRequest().body(
                         ResponseUtil.buildErrorBaseResponse("Invalid Token ❌", "Token ไม่ถูกต้อง"));
             }
-            GetBloodPressurePagingResponse response = bloodPressureService.getBloodPressurePagingByUserId(claims,
+            BaseResponse response = bloodPressureService.getBloodPressurePagingByUserId(claims,
                     request);
             return ResponseEntity.ok().body(response);
         } catch (Exception e) {

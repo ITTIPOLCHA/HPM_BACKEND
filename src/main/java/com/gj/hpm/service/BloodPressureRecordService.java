@@ -12,7 +12,6 @@ import com.gj.hpm.dto.request.GetBloodPressureRequest;
 import com.gj.hpm.dto.request.UpdateBloodPressureByIdRequest;
 import com.gj.hpm.dto.request.UpdateBloodPressureByTokenRequest;
 import com.gj.hpm.dto.response.BaseResponse;
-import com.gj.hpm.dto.response.GetBloodPressurePagingResponse;
 import com.gj.hpm.dto.response.GetBloodPressureResponse;
 import com.gj.hpm.dto.response.JwtClaimsDTO;
 
@@ -25,11 +24,11 @@ public interface BloodPressureRecordService {
 
     List<GetBloodPressureResponse> getBloodPressureByCreateBy(GetBloodPressureCreateByRequest request);
 
-    GetBloodPressurePagingResponse getBloodPressurePaging(GetBloodPressurePagingRequest request);
+    BaseResponse getBloodPressurePaging(GetBloodPressurePagingRequest request);
 
     GetBloodPressureResponse getBloodPressureByToken(JwtClaimsDTO dto, GetBloodPressureRequest request);
 
-    GetBloodPressurePagingResponse getBloodPressurePagingByUserId(JwtClaimsDTO dto,
+    BaseResponse getBloodPressurePagingByUserId(JwtClaimsDTO dto,
             GetBloodPressureByTokenPagingRequest request);
 
     BaseResponse updateBloodPressureById(UpdateBloodPressureByIdRequest request);
