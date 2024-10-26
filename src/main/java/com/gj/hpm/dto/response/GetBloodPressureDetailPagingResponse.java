@@ -13,6 +13,7 @@ public class GetBloodPressureDetailPagingResponse extends BaseResponse {
     private int diastolicPressure;
     private int pulseRate;
     private String statusFlag;
+    private DropdownUserResp patient;
     private DropdownUserResp createBy;
     private LocalDateTime createDate;
     private DropdownUserResp updateBy;
