@@ -329,7 +329,8 @@ public class BloodPressureRecordServiceImpl implements BloodPressureRecordServic
                         if (value instanceof String && StringUtils.isNotBlank((String) value)) {
                                 criteria.and(field).regex(".*" + value + ".*", "i");
                         } else if (value instanceof Integer) {
-                                criteria.and(field).is(value);
+                                criteria.and(field).regex(".*" + value + ".*", "i");
+                                // criteria.and(field).is(value);
                         }
                 }
         }
