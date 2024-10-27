@@ -35,9 +35,9 @@ public class StateServiceImpl implements StateService {
                                 .filter(u -> StatusFlag.INACTIVE.toString().equals(u.getStatusFlag()))
                                 .count();
                 long userWarningCount = users.stream()
-                                .filter(u -> !Level.NORMAL.toString().equals(u.getLevel())
-                                                && !Level.OPTIMAL.toString().equals(u.getLevel())
-                                                && !Level.HIGH.toString().equals(u.getLevel()))
+                                .filter(u -> !Level.NORMAL.equals(u.getLevel())
+                                                && !Level.OPTIMAL.equals(u.getLevel())
+                                                && !Level.HIGH.equals(u.getLevel()))
                                 .count();
 
                 response.setUserAll(users.size());
