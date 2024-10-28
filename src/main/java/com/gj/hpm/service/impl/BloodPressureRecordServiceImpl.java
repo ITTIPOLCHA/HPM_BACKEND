@@ -132,7 +132,7 @@ public class BloodPressureRecordServiceImpl implements BloodPressureRecordServic
                 } else if (request.getSystolicPressure() >= 130 || request.getDiastolicPressure() >= 85) {
                         update.set("level", Level.HIGH);
                         update.set("verified", true);
-                        msg = "ระดับ ความดันโลหิตสูงกว่าปกติ แต่ยังไม่เป็นโรคความดันโหลิตสูง คำแนะนำ ควบคุมอาหาร, การจำกัดเกลือในอาหาร, ออกกำลังกาย, วัดความดันอยู่เสมอ, การลดการดื่มแอลกอฮอล์";
+                        msg = "ระดับ ความดันโลหิตสูงกว่าปกติ แต่ยังไม่เป็นโรคความดันโลหิตสูง คำแนะนำ ควบคุมอาหาร, การจำกัดเกลือในอาหาร, ออกกำลังกาย, วัดความดันอยู่เสมอ, การลดการดื่มแอลกอฮอล์";
                 } else if (request.getSystolicPressure() >= 120 && request.getSystolicPressure() <= 129
                                 && request.getDiastolicPressure() < 85) {
                         update.set("level", Level.NORMAL);
