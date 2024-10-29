@@ -89,6 +89,9 @@ public class UserServiceImpl implements UserService {
         @Value("${hpm.app.rich.menu}")
         private String richMenu;
 
+        @Value("${hpm.app.rich.menu.login}")
+        private String richMenuLogin;
+
         @Autowired
         private StmUserRepository stmUserRepository;
 
@@ -411,10 +414,21 @@ public class UserServiceImpl implements UserService {
 
         @Override
         public BaseResponse deleteUserById(GetUserByIdRequest request) {
-                boolean verify = stmUserRepository.existsById(request.getUserId());
-                if (verify) {
+                User verify = stmUserRepository.findById(request.getUserId()).orElse(null);
+                if (verify != null) {
                         stpBloodPressureRepository.deleteByPatient_Id(request.getUserId());
                         stmUserRepository.deleteById(request.getUserId());
+                        if (!new LineUtil().changeRichmenu(verify.getLineId(),
+                                        richMenuLogin, token))
+                                return ResponseUtil.buildErrorBaseResponse(
+                                                "เกิดข้อผิดพลาด ❌",
+                                                "เปลี่ยน Rich menu ไม่ได้.");
+                        if (!new LineUtil().sentMessage(verify.getLineId(),
+                                        token, ("ระบบได้ลบข้อมูลของ " + verify.getFirstName()
+                                                        + " เรียบร้อยแล้ว✅ ท่านต้องสมัครสมาชิกเพื่อใช้บริการใหม่")))
+                                return ResponseUtil.buildErrorBaseResponse(
+                                                "เกิดข้อผิดพลาด ❌",
+                                                "ส่งข้อความไม่สำเร็จ.");
                         return ResponseUtil.buildSuccessBaseResponse("Success ✅", "ลบข้อมูลผู้ใช้สำเร็จ");
                 }
                 return ResponseUtil.buildErrorBaseResponse("Not Found ❌", "ไม่พบข้อมูลผู้ใช้");
@@ -422,9 +436,21 @@ public class UserServiceImpl implements UserService {
 
         @Override
         public BaseResponse deleteUserByToken(String id, BaseRequest request) {
-                boolean verify = stmUserRepository.existsById(id);
-                if (verify) {
+                User verify = stmUserRepository.findById(id).orElse(null);
+                if (verify != null) {
+                        stpBloodPressureRepository.deleteByPatient_Id(id);
                         stmUserRepository.deleteById(id);
+                        if (!new LineUtil().changeRichmenu(verify.getLineId(),
+                                        richMenuLogin, token))
+                                return ResponseUtil.buildErrorBaseResponse(
+                                                "เกิดข้อผิดพลาด ❌",
+                                                "เปลี่ยน Rich menu ไม่ได้.");
+                        if (!new LineUtil().sentMessage(verify.getLineId(),
+                                        token, ("ระบบได้ลบข้อมูลของ " + verify.getFirstName()
+                                                        + " เรียบร้อยแล้ว✅ ท่านต้องสมัครสมาชิกเพื่อใช้บริการใหม่")))
+                                return ResponseUtil.buildErrorBaseResponse(
+                                                "เกิดข้อผิดพลาด ❌",
+                                                "ส่งข้อความไม่สำเร็จ.");
                         return ResponseUtil.buildSuccessBaseResponse("Success ✅", "ลบข้อมูลผู้ใช้สำเร็จ");
                 }
                 return ResponseUtil.buildErrorBaseResponse("Not Found ❌", "ไม่พบข้อมูลผู้ใช้");
