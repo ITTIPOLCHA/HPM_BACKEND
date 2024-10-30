@@ -16,6 +16,8 @@ import com.gj.hpm.dto.response.GetBloodPressureResponse;
 import com.gj.hpm.dto.response.JwtClaimsDTO;
 
 public interface BloodPressureRecordService {
+    BaseResponse clearData();
+    
     BaseResponse createBloodPressure(JwtClaimsDTO dto, CreateBloodPressureRequest request);
 
     BaseResponse uploadImage(JwtClaimsDTO dto, String base64Image);

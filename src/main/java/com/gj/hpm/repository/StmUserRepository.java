@@ -24,6 +24,9 @@ public interface StmUserRepository extends MongoRepository<User, String> {
         @Query("{'email': ?0}")
         Optional<GetUserResponse> findGetUserByTokenRespByEmail(String email);
 
+        @Query("{'statusFlag': ?0}")
+        List<User> findByStatusFlag(String statusFlag);
+
         Boolean existsByUsername(String username);
 
         Boolean existsByEmail(String email);

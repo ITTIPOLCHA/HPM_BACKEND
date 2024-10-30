@@ -19,9 +19,17 @@ import com.gj.hpm.dto.response.GetUserResponse;
 import com.gj.hpm.dto.response.JwtResponse;
 
 public interface UserService {
+    BaseResponse setInactive();
+
+    BaseResponse sentMultiMessage();
+
     JwtResponse signIn(SignInRequest request);
 
     BaseResponse signUp(SignUpRequest request);
+
+    BaseResponse changePassword(String token, PasswordChangeRequest request);
+
+    BaseResponse forgotPassword(PasswordForgotRequest request);
 
     GetUserResponse getUserById(GetUserByIdRequest request);
 
@@ -42,10 +50,4 @@ public interface UserService {
     BaseResponse deleteUserById(GetUserByIdRequest request);
 
     BaseResponse deleteUserByToken(String id, BaseRequest request);
-
-    BaseResponse setInactive();
-
-    BaseResponse changePassword(String token, PasswordChangeRequest request);
-
-    BaseResponse forgotPassword(PasswordForgotRequest request);
 }

@@ -16,6 +16,7 @@ import com.gj.hpm.dto.request.SignInRequest;
 import com.gj.hpm.dto.request.SignUpRequest;
 import com.gj.hpm.dto.response.BaseResponse;
 import com.gj.hpm.dto.response.JwtResponse;
+import com.gj.hpm.service.BloodPressureRecordService;
 import com.gj.hpm.service.UserService;
 import com.gj.hpm.util.ResponseUtil;
 
@@ -29,10 +30,49 @@ public class SystemController {
         @Autowired
         private UserService userService;
 
+        @Autowired
+        private BloodPressureRecordService bloodPressureRecordService;
+
         @GetMapping("/ping")
         public ResponseEntity<?> ping() {
                 return ResponseUtil.buildSuccessResponse(
                                 "สำเร็จ ✅", "ปิง สำเร็จ");
+        }
+
+        @PostMapping("/setInactive")
+        public ResponseEntity<BaseResponse> setInactive() {
+                try {
+                        BaseResponse response = userService.setInactive();
+                        return ResponseEntity.ok(response);
+                } catch (Exception e) {
+                        return ResponseUtil.buildErrorResponse(
+                                        "เกิดข้อผิดพลาด ❌",
+                                        "ไม่สามารถเปลี่ยนสถานะเป็น Inactive ได้.");
+                }
+        }
+
+        @PostMapping("/sentMultiMessage")
+        public ResponseEntity<BaseResponse> sentMultiMessage() {
+                try {
+                        BaseResponse response = userService.sentMultiMessage();
+                        return ResponseEntity.ok(response);
+                } catch (Exception e) {
+                        return ResponseUtil.buildErrorResponse(
+                                        "เกิดข้อผิดพลาด ❌",
+                                        "ไม่สามารถเปลี่ยนสถานะเป็น Inactive ได้.");
+                }
+        }
+
+        @PostMapping("/clearData")
+        public ResponseEntity<?> clearData() {
+                try {
+                        BaseResponse response = bloodPressureRecordService.clearData();
+                        return ResponseEntity.ok().body(response);
+                } catch (Exception e) {
+                        return ResponseUtil.buildErrorResponse(
+                                        "เกิดข้อผิดพลาด ❌",
+                                        "ไม่สามารถขอเปลี่ยนรหัสผ่านได้.");
+                }
         }
 
         @PostMapping("/signIn")
@@ -56,18 +96,6 @@ public class SystemController {
                         return ResponseUtil.buildErrorResponse(
                                         "เกิดข้อผิดพลาด ❌",
                                         "สมัครสมาชิกไม่สำเร็จ.");
-                }
-        }
-
-        @PostMapping("/setInactive")
-        public ResponseEntity<BaseResponse> setInactive() {
-                try {
-                        BaseResponse response = userService.setInactive();
-                        return ResponseEntity.ok(response);
-                } catch (Exception e) {
-                        return ResponseUtil.buildErrorResponse(
-                                        "เกิดข้อผิดพลาด ❌",
-                                        "ไม่สามารถเปลี่ยนสถานะเป็น Inactive ได้.");
                 }
         }
 

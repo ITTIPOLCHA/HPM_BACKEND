@@ -114,6 +114,32 @@ public class UserServiceImpl implements UserService {
         AuthenticationManager authenticationManager;
 
         @Override
+        public BaseResponse setInactive() {
+                Update update = new Update();
+                update.set("statusFlag", StatusFlag.INACTIVE.code());
+                update.set("level", Level.NORMAL);
+                update.set("verified", false);
+                mongoTemplate.updateMulti(new Query(Criteria.where("lineId").ne(null)), update,
+                                User.class, "user");
+                return ResponseUtil.buildSuccessBaseResponse("Success ✅", "เปลี่ยนสถานะเป็น Inactive สำเร็จ");
+        }
+
+        @Override
+        public BaseResponse sentMultiMessage() {
+                List<User> users = stmUserRepository.findByStatusFlag(StatusFlag.INACTIVE.code());
+                List<String> lineId = new ArrayList<>();
+                for (User user : users) {
+                        lineId.add(user.getLineId());
+                }
+                if (!new LineUtil().sentMultiMessage(lineId,
+                                token, "อย่าลืมวัดความดันโลหิตและส่งผลด้วยนะครับ เพื่อให้ทางเราดูแลสุขภาพของท่าน"))
+                        return ResponseUtil.buildErrorBaseResponse(
+                                        "เกิดข้อผิดพลาด ❌",
+                                        "ส่งข้อความไม่สำเร็จ.");
+                return ResponseUtil.buildSuccessBaseResponse("Success ✅", "ส่งข้อความสำเร็จ");
+        }
+
+        @Override
         public JwtResponse signIn(SignInRequest request) {
                 // Check Line Token
                 if (StringUtils.isNotBlank(request.getLineToken())) {
@@ -239,6 +265,42 @@ public class UserServiceImpl implements UserService {
                 if (StringUtils.isNotBlank(lineId) && stmUserRepository.existsByLineId(lineId))
                         details.add(new BaseDetailsResponse("line", "Line นี้ถูกใช้งานแล้ว"));
                 return details;
+        }
+
+        @Override
+        public BaseResponse changePassword(String token, PasswordChangeRequest request) {
+
+                User user = stmUserRepository.findById(jwtUtils.getIdFromHeader(token)).orElse(null);
+
+                if (user != null) {
+                        if (encoder.matches(request.getOldPassword(), user.getPassword())) {
+                                user.setPassword(encoder.encode(request.getNewPassword()));
+                                user.setUpdateDate(LocalDateTime.now());
+                                stmUserRepository.save(user);
+                                return ResponseUtil.buildSuccessBaseResponse("Success ✅", "เปลี่ยนรหัสผ่านสำเร็จ");
+                        } else {
+                                return ResponseUtil.buildErrorBaseResponse("Bad Request ❌",
+                                                "รหัสผ่านไม่ตรงกับรหัสเก่า");
+                        }
+                } else {
+                        return ResponseUtil.buildErrorBaseResponse("Not Found ❌", "ไม่พบข้อมูลผู้ใช้");
+                }
+        }
+
+        @Override
+        public BaseResponse forgotPassword(PasswordForgotRequest request) {
+
+                User user = stmUserRepository.findByEmailAndPhoneNumber(request.getEmail(), request.getPhoneNumber())
+                                .orElse(null);
+
+                if (user != null) {
+                        user.setPassword(encoder.encode(request.getNewPassword()));
+                        user.setUpdateDate(LocalDateTime.now());
+                        stmUserRepository.save(user);
+                        return ResponseUtil.buildSuccessBaseResponse("Success ✅", "เปลี่ยนรหัสผ่านสำเร็จ");
+                } else {
+                        return ResponseUtil.buildErrorBaseResponse("Not Found ❌", "ไม่พบข้อมูลผู้ใช้");
+                }
         }
 
         @Override
@@ -455,52 +517,4 @@ public class UserServiceImpl implements UserService {
                 }
                 return ResponseUtil.buildErrorBaseResponse("Not Found ❌", "ไม่พบข้อมูลผู้ใช้");
         }
-
-        @Override
-        public BaseResponse setInactive() {
-                Update update = new Update();
-                update.set("statusFlag", StatusFlag.INACTIVE.code());
-                update.set("level", Level.NORMAL);
-                update.set("verified", false);
-                mongoTemplate.updateMulti(new Query(Criteria.where("lineId").ne(null)), update,
-                                User.class, "user");
-                return ResponseUtil.buildSuccessBaseResponse("Success ✅", "เปลี่ยนสถานะเป็น Inactive สำเร็จ");
-        }
-
-        @Override
-        public BaseResponse changePassword(String token, PasswordChangeRequest request) {
-
-                User user = stmUserRepository.findById(jwtUtils.getIdFromHeader(token)).orElse(null);
-
-                if (user != null) {
-                        if (encoder.matches(request.getOldPassword(), user.getPassword())) {
-                                user.setPassword(encoder.encode(request.getNewPassword()));
-                                user.setUpdateDate(LocalDateTime.now());
-                                stmUserRepository.save(user);
-                                return ResponseUtil.buildSuccessBaseResponse("Success ✅", "เปลี่ยนรหัสผ่านสำเร็จ");
-                        } else {
-                                return ResponseUtil.buildErrorBaseResponse("Bad Request ❌",
-                                                "รหัสผ่านไม่ตรงกับรหัสเก่า");
-                        }
-                } else {
-                        return ResponseUtil.buildErrorBaseResponse("Not Found ❌", "ไม่พบข้อมูลผู้ใช้");
-                }
-        }
-
-        @Override
-        public BaseResponse forgotPassword(PasswordForgotRequest request) {
-
-                User user = stmUserRepository.findByEmailAndPhoneNumber(request.getEmail(), request.getPhoneNumber())
-                                .orElse(null);
-
-                if (user != null) {
-                        user.setPassword(encoder.encode(request.getNewPassword()));
-                        user.setUpdateDate(LocalDateTime.now());
-                        stmUserRepository.save(user);
-                        return ResponseUtil.buildSuccessBaseResponse("Success ✅", "เปลี่ยนรหัสผ่านสำเร็จ");
-                } else {
-                        return ResponseUtil.buildErrorBaseResponse("Not Found ❌", "ไม่พบข้อมูลผู้ใช้");
-                }
-        }
-
 }

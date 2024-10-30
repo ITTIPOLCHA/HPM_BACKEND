@@ -1,6 +1,8 @@
 package com.gj.hpm.service.impl;
 
 import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -86,6 +88,24 @@ public class BloodPressureRecordServiceImpl implements BloodPressureRecordServic
 
         @Autowired
         private RestTemplate restTemplate;
+
+        @Override
+        public BaseResponse clearData() {
+                LocalDateTime fourMonthsAgo = LocalDateTime.now().minusMonths(4);
+                Date dateLimit = Date.from(fourMonthsAgo.atZone(ZoneId.systemDefault()).toInstant());
+
+                Query query = new Query();
+                query.addCriteria(Criteria.where("createDate").lt(dateLimit));
+
+                DeleteResult result = mongoTemplate.remove(query, BloodPressureRecord.class, "bloodPressureRecord");
+
+                if (result.getDeletedCount() > 0) {
+                        return ResponseUtil.buildSuccessBaseResponse("Success ✅", "ลบข้อมูลเก่ากว่า 4 เดือนสำเร็จ");
+                } else {
+                        return ResponseUtil.buildErrorBaseResponse("Not Found ❌",
+                                        "ไม่พบข้อมูลความดันโลหิตที่ต้องการลบ");
+                }
+        }
 
         @Override
         public BaseResponse createBloodPressure(JwtClaimsDTO dto, CreateBloodPressureRequest request) {

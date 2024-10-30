@@ -69,4 +69,36 @@ public class LineUtil {
         }
     }
 
+    public Boolean sentMultiMessage(List<String> lineIds, String token, String stringMessages) {
+        try {
+            RestTemplate restTemplate = new RestTemplate();
+
+            String apiUrl = "https://api.line.me/v2/bot/message/multicast";
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            headers.set("Authorization", "Bearer " + token);
+
+            ObjectMapper objectMapper = new ObjectMapper();
+
+            Map<String, Object> requestBodyLine = new HashMap<>();
+            List<Map<String, Object>> messages = new ArrayList<>();
+            Map<String, Object> message = new HashMap<>();
+            message.put("type", "text");
+            message.put("text", stringMessages);
+            messages.add(message);
+            requestBodyLine.put("messages", messages);
+            requestBodyLine.put("to", lineIds);
+            String jsonBody = objectMapper.writeValueAsString(requestBodyLine);
+
+            HttpEntity<String> requestEntity = new HttpEntity<>(jsonBody, headers);
+
+            restTemplate.exchange(apiUrl, HttpMethod.POST, requestEntity,
+                    String.class);
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
 }
