@@ -63,7 +63,7 @@ public class UserController {
                 return ResponseEntity.badRequest().body(
                         ResponseUtil.buildErrorBaseResponse("Invalid Token ❌", "Token ไม่ถูกต้อง"));
             }
-            GetUserResponse response = userService.getUserByToken(claims.getJwtId());
+            GetUserResponse response = userService.getUserByToken(claims.getSubject());
             return ResponseEntity.ok().body(response);
         } catch (NotFoundException e) {
             return ResponseEntity.badRequest().body(e.getResponse());
