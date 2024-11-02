@@ -132,7 +132,8 @@ public class UserServiceImpl implements UserService {
                         lineId.add(user.getLineId());
                 }
                 if (!new LineUtil().sentMultiMessage(lineId,
-                                token, "อย่าลืมวัดความดันโลหิตและส่งผลด้วยนะครับ เพื่อให้ทางเราดูแลสุขภาพของท่าน"))
+                                token,
+                                "อย่าลืมวัดความดันโลหิตและส่งผลค่าความดันโลหิตในวันนี้ เพื่อทางโรงพยาบาลจะได้ติดตามอาการและดูแลสุขภาพของท่านอย่างสม่ำเสมอครับ"))
                         return ResponseUtil.buildErrorBaseResponse(
                                         "เกิดข้อผิดพลาด ❌",
                                         "ส่งข้อความไม่สำเร็จ.");
