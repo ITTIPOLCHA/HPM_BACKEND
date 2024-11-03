@@ -157,7 +157,7 @@ public class BloodPressureRecordServiceImpl implements BloodPressureRecordServic
                                 && request.getDiastolicPressure() < 85) {
                         update.set("level", Level.NORMAL);
                         update.set("verified", true);
-                        msg = "ระดับ ปกคิ คำแนะนำ ควบคุมอาหาร, ออกกำลังกาย, วัดความดันอยู่เสมอ";
+                        msg = "ระดับ ปกติ คำแนะนำ ควบคุมอาหาร, ออกกำลังกาย, วัดความดันอยู่เสมอ";
                 } else {
                         update.set("level", Level.OPTIMAL);
                         update.set("verified", true);
