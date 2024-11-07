@@ -22,7 +22,10 @@ public interface BloodPressureRecordRepository extends MongoRepository<BloodPres
     @Query("{ '_id': ?0, 'patient._id': ?1}")
     Optional<BloodPressureRecord> findByIdAndPatient_Id(String id, String userId);
 
-    @Query("{ 'patient._id': ?0 }")
+    @Aggregation(pipeline = {
+            "{ $match: { 'patient._id': ?0 } }",
+            "{ $sort: { 'createDate': -1 } }"
+    })
     List<GetBloodPressureResponse> findByPatient_Id(String userId);
 
     boolean existsByCreateDateAfterAndCreateById(LocalDateTime createDate, String createById);
