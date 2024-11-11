@@ -1,5 +1,6 @@
 package com.gj.hpm.service;
 
+import java.io.IOException;
 import java.util.List;
 
 import com.gj.hpm.dto.request.CreateBloodPressureRequest;
@@ -21,6 +22,8 @@ public interface BloodPressureRecordService {
     BaseResponse createBloodPressure(JwtClaimsDTO dto, CreateBloodPressureRequest request);
 
     BaseResponse uploadImage(JwtClaimsDTO dto, String base64Image);
+
+    byte[] generateExcelFile() throws IOException;
 
     GetBloodPressureResponse getBloodPressureById(GetBloodPressureRequest request);
 

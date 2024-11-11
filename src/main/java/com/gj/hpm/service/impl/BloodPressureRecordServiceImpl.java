@@ -1,13 +1,37 @@
 package com.gj.hpm.service.impl;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.lang.reflect.Field;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.poi.common.usermodel.HyperlinkType;
+import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.ss.util.CellRangeAddress;
+import org.apache.poi.xddf.usermodel.chart.AxisPosition;
+import org.apache.poi.xddf.usermodel.chart.ChartTypes;
+import org.apache.poi.xddf.usermodel.chart.XDDFCategoryAxis;
+import org.apache.poi.xddf.usermodel.chart.XDDFChartData;
+import org.apache.poi.xddf.usermodel.chart.XDDFDataSource;
+import org.apache.poi.xddf.usermodel.chart.XDDFDataSourcesFactory;
+import org.apache.poi.xddf.usermodel.chart.XDDFNumericalDataSource;
+import org.apache.poi.xddf.usermodel.chart.XDDFValueAxis;
+import org.apache.poi.xssf.usermodel.XSSFChart;
+import org.apache.poi.xssf.usermodel.XSSFClientAnchor;
+import org.apache.poi.xssf.usermodel.XSSFDrawing;
+import org.apache.poi.xssf.usermodel.XSSFSheet;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -91,8 +115,8 @@ public class BloodPressureRecordServiceImpl implements BloodPressureRecordServic
 
         @Override
         public BaseResponse clearData() {
-                LocalDateTime fourMonthsAgo = LocalDateTime.now().minusMonths(4);
-                Date dateLimit = Date.from(fourMonthsAgo.atZone(ZoneId.systemDefault()).toInstant());
+                LocalDateTime fiveMonthsAgo = LocalDateTime.now().minusMonths(5);
+                Date dateLimit = Date.from(fiveMonthsAgo.atZone(ZoneId.systemDefault()).toInstant());
 
                 Query query = new Query();
                 query.addCriteria(Criteria.where("createDate").lt(dateLimit));
@@ -100,7 +124,7 @@ public class BloodPressureRecordServiceImpl implements BloodPressureRecordServic
                 DeleteResult result = mongoTemplate.remove(query, BloodPressureRecord.class, "bloodPressureRecord");
 
                 if (result.getDeletedCount() > 0) {
-                        return ResponseUtil.buildSuccessBaseResponse("Success ✅", "ลบข้อมูลเก่ากว่า 4 เดือนสำเร็จ");
+                        return ResponseUtil.buildSuccessBaseResponse("Success ✅", "ลบข้อมูลเก่ากว่า 5 เดือนสำเร็จ");
                 } else {
                         return ResponseUtil.buildErrorBaseResponse("Not Found ❌",
                                         "ไม่พบข้อมูลความดันโลหิตที่ต้องการลบ");
@@ -109,14 +133,12 @@ public class BloodPressureRecordServiceImpl implements BloodPressureRecordServic
 
         @Override
         public BaseResponse createBloodPressure(JwtClaimsDTO dto, CreateBloodPressureRequest request) {
-                // Can't find it user.
                 if (!stmUserRepository.existsById(dto.getJwtId())) {
                         return ResponseUtil.buildBaseResponse(ApiReturn.BAD_REQUEST.code(),
                                         ApiReturn.BAD_REQUEST.description(), "Not Found ❌",
                                         "ไม่พบข้อมูลผู้ใช้งาน");
                 }
 
-                // Created 1 hour ago.
                 if (stpBloodPressureRepository
                                 .existsByCreateDateAfterAndCreateById(LocalDateTime.now().minusHours(1),
                                                 dto.getJwtId())) {
@@ -236,6 +258,134 @@ public class BloodPressureRecordServiceImpl implements BloodPressureRecordServic
                 return ResponseUtil.buildBaseResponse(ApiReturn.BAD_REQUEST.code(),
                                 ApiReturn.BAD_REQUEST.description(), "Fail ❌",
                                 "ข้อมูลความดันโลหิตถูกบันทึกไปแล้ว ใน 1 ชั่วโมงนี้");
+        }
+
+        @Override
+        public byte[] generateExcelFile() throws IOException {
+                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
+
+                Query query = new Query();
+                LocalDateTime fourMonthsAgo = LocalDateTime.now().minusMonths(4);
+                Date dateLimit = Date.from(fourMonthsAgo.atZone(ZoneId.systemDefault()).toInstant());
+                query.addCriteria(Criteria.where("createDate").lt(dateLimit));
+                List<GetBloodPressureResponse> result = mongoTemplate.find(query, GetBloodPressureResponse.class,
+                                "bloodPressureRecord");
+
+                if (result.isEmpty()) {
+                        return null;
+                }
+
+                Map<String, List<GetBloodPressureResponse>> userRecordsMap = result.stream()
+                                .collect(Collectors.groupingBy(record -> record.getCreateBy() != null
+                                                ? record.getCreateBy().getFirstName() + " "
+                                                                + record.getCreateBy().getLastName() + " ( "
+                                                                + record.getCreateBy().getHospitalNumber() + " ) "
+                                                : "Unknown"));
+
+                Workbook workbook = new XSSFWorkbook();
+                XSSFSheet summarySheet = (XSSFSheet) workbook.createSheet("Main");
+
+                Row summaryHeader = summarySheet.createRow(0);
+                summaryHeader.createCell(0).setCellValue("Patient Name ( Hospital Number )");
+
+                int summaryRowNum = 1;
+
+                for (Map.Entry<String, List<GetBloodPressureResponse>> entry : userRecordsMap.entrySet()) {
+                        String userName = entry.getKey();
+                        List<GetBloodPressureResponse> userRecords = entry.getValue();
+
+                        userRecords.sort(Comparator.comparing(GetBloodPressureResponse::getCreateDate));
+
+                        XSSFSheet userSheet = (XSSFSheet) workbook.createSheet(userName);
+
+                        Row backRow = userSheet.createRow(0);
+                        Cell backCell = backRow.createCell(0);
+                        backCell.setCellValue("Back to Summary");
+
+                        CreationHelper createHelper = workbook.getCreationHelper();
+                        Hyperlink backToSummaryLink = createHelper.createHyperlink(HyperlinkType.DOCUMENT);
+                        backToSummaryLink.setAddress("'Main'!A1");
+                        backCell.setHyperlink(backToSummaryLink);
+                        backCell.setCellStyle(createHyperlinkStyle(workbook));
+
+                        List<String> headers = Arrays.asList("Date", "Systolic Pressure", "Diastolic Pressure",
+                                        "Pulse Rate");
+                        Row userHeaderRow = userSheet.createRow(1);
+                        for (int i = 0; i < headers.size(); i++) {
+                                Cell cell = userHeaderRow.createCell(i);
+                                cell.setCellValue(headers.get(i));
+                        }
+
+                        int rowNum = 2;
+                        for (GetBloodPressureResponse record : userRecords) {
+                                Row row = userSheet.createRow(rowNum++);
+                                String formattedDate = record.getCreateDate() != null
+                                                ? record.getCreateDate().format(formatter)
+                                                : "";
+                                row.createCell(0).setCellValue(formattedDate);
+                                row.createCell(1).setCellValue(Double.parseDouble(record.getSystolicPressure()));
+                                row.createCell(2).setCellValue(Double.parseDouble(record.getDiastolicPressure()));
+                                row.createCell(3).setCellValue(Double.parseDouble(record.getPulseRate()));
+                        }
+
+                        Row summaryRow = summarySheet.createRow(summaryRowNum++);
+                        Cell userNameCell = summaryRow.createCell(0);
+                        userNameCell.setCellValue(userName);
+
+                        Hyperlink hyperlink = createHelper.createHyperlink(HyperlinkType.DOCUMENT);
+                        hyperlink.setAddress("'" + userName + "'!A1");
+                        userNameCell.setHyperlink(hyperlink);
+                        userNameCell.setCellStyle(createHyperlinkStyle(workbook));
+
+                        createChartForUserSheet(userSheet, userRecords.size(), userName);
+                }
+
+                ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+                workbook.write(outputStream);
+                workbook.close();
+
+                return outputStream.toByteArray();
+        }
+
+        private void createChartForUserSheet(XSSFSheet sheet, int recordSize, String userName) {
+                XSSFDrawing drawing = sheet.createDrawingPatriarch();
+                XSSFClientAnchor anchor = drawing.createAnchor(0, 0, 0, 0, 5, 2, 15, 20);
+                XSSFChart chart = drawing.createChart(anchor);
+                chart.setTitleText("Blood Pressure Overview : " + userName);
+                chart.setTitleOverlay(false);
+
+                XDDFCategoryAxis bottomAxis = chart.createCategoryAxis(AxisPosition.BOTTOM);
+                bottomAxis.setTitle("Date");
+                XDDFValueAxis leftAxis = chart.createValueAxis(AxisPosition.LEFT);
+                leftAxis.setTitle("Blood Pressure");
+
+                XDDFDataSource<String> datesData = XDDFDataSourcesFactory.fromStringCellRange(sheet,
+                                new CellRangeAddress(2, recordSize + 1, 0, 0));
+                XDDFNumericalDataSource<Double> systolicData = XDDFDataSourcesFactory.fromNumericCellRange(sheet,
+                                new CellRangeAddress(2, recordSize + 1, 1, 1));
+                XDDFNumericalDataSource<Double> diastolicData = XDDFDataSourcesFactory.fromNumericCellRange(sheet,
+                                new CellRangeAddress(2, recordSize + 1, 2, 2));
+                XDDFNumericalDataSource<Double> pulseRateData = XDDFDataSourcesFactory.fromNumericCellRange(sheet,
+                                new CellRangeAddress(2, recordSize + 1, 3, 3));
+
+                XDDFChartData dataChart = chart.createData(ChartTypes.LINE, bottomAxis, leftAxis);
+                XDDFChartData.Series systolicSeries = dataChart.addSeries(datesData, systolicData);
+                systolicSeries.setTitle("Systolic Pressure", null);
+                XDDFChartData.Series diastolicSeries = dataChart.addSeries(datesData, diastolicData);
+                diastolicSeries.setTitle("Diastolic Pressure", null);
+                XDDFChartData.Series pulseRateSeries = dataChart.addSeries(datesData, pulseRateData);
+                pulseRateSeries.setTitle("Pulse Rate", null);
+
+                chart.plot(dataChart);
+        }
+
+        private CellStyle createHyperlinkStyle(Workbook workbook) {
+                CellStyle hyperlinkStyle = workbook.createCellStyle();
+                Font hyperlinkFont = workbook.createFont();
+                hyperlinkFont.setUnderline(Font.U_SINGLE);
+                hyperlinkFont.setColor(IndexedColors.BLUE.getIndex());
+                hyperlinkStyle.setFont(hyperlinkFont);
+                return hyperlinkStyle;
         }
 
         @Override

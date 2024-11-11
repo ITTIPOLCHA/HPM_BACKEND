@@ -4,8 +4,11 @@ import java.io.IOException;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
@@ -75,6 +78,19 @@ public class BloodPressureController {
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
+    }
+
+    @PostMapping("/export/excel")
+    public ResponseEntity<byte[]> exportToExcel() throws IOException {
+        byte[] excelContent = bloodPressureService.generateExcelFile();
+
+        HttpHeaders headersResponse = new HttpHeaders();
+        headersResponse.setContentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
+        headersResponse.setContentDispositionFormData("attachment", "data.xlsx");
+
+        return ResponseEntity.ok()
+                .headers(headersResponse)
+                .body(excelContent);
     }
 
     // ! R
