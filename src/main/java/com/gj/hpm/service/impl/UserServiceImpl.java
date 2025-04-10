@@ -372,7 +372,7 @@ public class UserServiceImpl implements UserService {
                 addCriteriaIfNotEmpty(criteria, "hospitalNumber", request.getHospitalNumber());
                 addCriteriaIfNotEmpty(criteria, "level", request.getLevel());
                 return criteria;
-        }        
+        }
 
         @Override
         @Transactional(readOnly = true)
@@ -517,17 +517,19 @@ public class UserServiceImpl implements UserService {
                 if (verify != null) {
                         stpBloodPressureRepository.deleteByPatient_Id(request.getUserId());
                         stmUserRepository.deleteById(request.getUserId());
-                        if (!new LineUtil().changeRichmenu(verify.getLineId(),
-                                        richMenuLogin, token))
-                                return ResponseUtil.buildErrorBaseResponse(
-                                                "เกิดข้อผิดพลาด ❌",
-                                                "เปลี่ยน Rich menu ไม่ได้.");
-                        if (!new LineUtil().sentMessage(verify.getLineId(),
-                                        token, ("ระบบได้ลบข้อมูลของ " + verify.getFirstName()
-                                                        + " เรียบร้อยแล้ว✅ ท่านต้องสมัครสมาชิกเพื่อใช้บริการใหม่")))
-                                return ResponseUtil.buildErrorBaseResponse(
-                                                "เกิดข้อผิดพลาด ❌",
-                                                "ส่งข้อความไม่สำเร็จ.");
+                        if (verify.getLineId() != null) {
+                                if (!new LineUtil().changeRichmenu(verify.getLineId(),
+                                                richMenuLogin, token))
+                                        return ResponseUtil.buildErrorBaseResponse(
+                                                        "เกิดข้อผิดพลาด ❌",
+                                                        "เปลี่ยน Rich menu ไม่ได้.");
+                                if (!new LineUtil().sentMessage(verify.getLineId(),
+                                                token, ("ระบบได้ลบข้อมูลของ " + verify.getFirstName()
+                                                                + " เรียบร้อยแล้ว✅ ท่านต้องสมัครสมาชิกเพื่อใช้บริการใหม่")))
+                                        return ResponseUtil.buildErrorBaseResponse(
+                                                        "เกิดข้อผิดพลาด ❌",
+                                                        "ส่งข้อความไม่สำเร็จ.");
+                        }
                         return ResponseUtil.buildSuccessBaseResponse("Success ✅", "ลบข้อมูลผู้ใช้สำเร็จ");
                 }
                 return ResponseUtil.buildErrorBaseResponse("Not Found ❌", "ไม่พบข้อมูลผู้ใช้");
