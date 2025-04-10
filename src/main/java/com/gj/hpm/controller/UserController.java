@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.gj.hpm.config.security.jwt.JwtUtils;
 import com.gj.hpm.dto.request.BaseRequest;
+import com.gj.hpm.dto.request.GetAdminPagingRequest;
 import com.gj.hpm.dto.request.GetUserByIdRequest;
 import com.gj.hpm.dto.request.GetUserPagingRequest;
 import com.gj.hpm.dto.request.UpdateUserByIdRequest;
@@ -76,6 +77,17 @@ public class UserController {
             @RequestBody GetUserPagingRequest request) {
         try {
             BaseResponse response = userService.getUserPaging(request);
+            return ResponseEntity.ok().body(response);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @PostMapping("/a/getAdminPaging")
+    public ResponseEntity<?> getAdminPaging(@RequestHeader("Authorization") String token,
+            @RequestBody GetAdminPagingRequest request) {
+        try {
+            BaseResponse response = userService.getAdminPaging(request);
             return ResponseEntity.ok().body(response);
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());

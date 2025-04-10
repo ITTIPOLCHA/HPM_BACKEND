@@ -3,6 +3,7 @@ package com.gj.hpm.service;
 import java.util.List;
 
 import com.gj.hpm.dto.request.BaseRequest;
+import com.gj.hpm.dto.request.GetAdminPagingRequest;
 import com.gj.hpm.dto.request.GetUserByIdRequest;
 import com.gj.hpm.dto.request.GetUserPagingRequest;
 import com.gj.hpm.dto.request.PasswordChangeRequest;
@@ -36,6 +37,8 @@ public interface UserService {
     GetUserResponse getUserByToken(String id);
 
     BaseResponse getUserPaging(GetUserPagingRequest request);
+
+    BaseResponse getAdminPaging(GetAdminPagingRequest request);
 
     List<GetUserListByLevelResponse> getUserListByLevel();
 

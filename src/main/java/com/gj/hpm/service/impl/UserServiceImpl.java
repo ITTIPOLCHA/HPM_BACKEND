@@ -40,6 +40,7 @@ import com.gj.hpm.config.security.jwt.JwtUtils;
 import com.gj.hpm.config.security.services.UserDetailsImpl;
 import com.gj.hpm.dto.PageableDto;
 import com.gj.hpm.dto.request.BaseRequest;
+import com.gj.hpm.dto.request.GetAdminPagingRequest;
 import com.gj.hpm.dto.request.GetUserByIdRequest;
 import com.gj.hpm.dto.request.GetUserPagingRequest;
 import com.gj.hpm.dto.request.PasswordChangeRequest;
@@ -51,6 +52,7 @@ import com.gj.hpm.dto.request.UpdateUserByTokenRequest;
 import com.gj.hpm.dto.request.UpdateUserCheckStateRequest;
 import com.gj.hpm.dto.response.BaseDetailsResponse;
 import com.gj.hpm.dto.response.BaseResponse;
+import com.gj.hpm.dto.response.GetAdminDetailPagingResponse;
 import com.gj.hpm.dto.response.GetUserDetailPagingResponse;
 import com.gj.hpm.dto.response.GetUserListByLevelResponse;
 import com.gj.hpm.dto.response.GetUserListByStatusFlagResponse;
@@ -369,6 +371,40 @@ public class UserServiceImpl implements UserService {
                 addCriteriaIfNotEmpty(criteria, "phoneNumber", request.getPhoneNumber());
                 addCriteriaIfNotEmpty(criteria, "hospitalNumber", request.getHospitalNumber());
                 addCriteriaIfNotEmpty(criteria, "level", request.getLevel());
+                return criteria;
+        }        
+
+        @Override
+        @Transactional(readOnly = true)
+        public BaseResponse getAdminPaging(GetAdminPagingRequest request) {
+                Page<GetAdminDetailPagingResponse> userPage = findAdminByAggregation(request);
+                return new PageableDto<>(userPage);
+        }
+
+        private Page<GetAdminDetailPagingResponse> findAdminByAggregation(GetAdminPagingRequest request) {
+                Sort sort = MongoUtil.getSortFromRequest(request);
+                Pageable pageable = PageRequest.of(request.getPage(), request.getSize(),
+                                sort.isEmpty() ? Sort.by(Sort.Order.asc("firstName")) : sort);
+                Criteria criteria = setAdminCriteria(request);
+                Aggregation aggregation = Aggregation.newAggregation(
+                                Aggregation.match(criteria),
+                                Aggregation.sort(pageable.getSort()),
+                                Aggregation.skip((long) pageable.getOffset()),
+                                Aggregation.limit(pageable.getPageSize()));
+                AggregationResults<GetAdminDetailPagingResponse> aggregationResults = mongoTemplate.aggregate(
+                                aggregation, "user", GetAdminDetailPagingResponse.class);
+                List<GetAdminDetailPagingResponse> results = aggregationResults.getMappedResults();
+                long total = mongoTemplate.count(new Query(criteria), User.class, "user");
+                return new PageImpl<>(results, pageable, total);
+        }
+
+        private Criteria setAdminCriteria(GetAdminPagingRequest request) {
+                Criteria criteria = new Criteria();
+                criteria.and("lineId").isNull();
+                addCriteriaIfNotEmpty(criteria, "firstName", request.getFirstName());
+                addCriteriaIfNotEmpty(criteria, "lastName", request.getLastName());
+                addCriteriaIfNotEmpty(criteria, "email", request.getEmail());
+                addCriteriaIfNotEmpty(criteria, "phoneNumber", request.getPhoneNumber());
                 return criteria;
         }
 
