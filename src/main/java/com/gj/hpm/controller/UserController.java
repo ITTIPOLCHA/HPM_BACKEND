@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.gj.hpm.config.security.jwt.JwtUtils;
 import com.gj.hpm.dto.request.BaseRequest;
+import com.gj.hpm.dto.request.CreateUserRequest;
 import com.gj.hpm.dto.request.GetAdminPagingRequest;
 import com.gj.hpm.dto.request.GetUserByIdRequest;
 import com.gj.hpm.dto.request.GetUserPagingRequest;
@@ -40,14 +41,24 @@ public class UserController {
     private JwtUtils jwtUtils;
 
     // ! C
-    // * Sign up
+    @PostMapping("/a/createUser")
+    public ResponseEntity<?> createUser(@RequestHeader("Authorization") String token,
+            @RequestBody GetUserByIdRequest request) {
+        try {
+            GetUserResponse response = userService.getUserById(request);
+            return ResponseEntity.ok().body(response);
+        } catch (NotFoundException e) {
+            return ResponseEntity.badRequest().body(e.getResponse());
+        }
+    }
+
     // ! R
     // ? Get By Id
     @PostMapping("/a/getUserById")
     public ResponseEntity<?> getUserById(@RequestHeader("Authorization") String token,
-            @RequestBody GetUserByIdRequest request) {
+            @RequestBody CreateUserRequest request) {
         try {
-            GetUserResponse response = userService.getUserById(request);
+            BaseResponse response = userService.createUser(request);
             return ResponseEntity.ok().body(response);
         } catch (NotFoundException e) {
             return ResponseEntity.badRequest().body(e.getResponse());

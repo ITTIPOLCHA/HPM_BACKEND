@@ -40,6 +40,7 @@ import com.gj.hpm.config.security.jwt.JwtUtils;
 import com.gj.hpm.config.security.services.UserDetailsImpl;
 import com.gj.hpm.dto.PageableDto;
 import com.gj.hpm.dto.request.BaseRequest;
+import com.gj.hpm.dto.request.CreateUserRequest;
 import com.gj.hpm.dto.request.GetAdminPagingRequest;
 import com.gj.hpm.dto.request.GetUserByIdRequest;
 import com.gj.hpm.dto.request.GetUserPagingRequest;
@@ -257,6 +258,31 @@ public class UserServiceImpl implements UserService {
                                 "สมัครสมาชิกสำเร็จ");
         }
 
+        @Override
+        public BaseResponse createUser(CreateUserRequest request) {
+                User user = new User();
+                Set<Role> roles = new HashSet<>();
+                Role role = roleRepository.findByName(ERole.ROLE_ADMIN);
+
+                List<BaseDetailsResponse> details = validateSignUpRequest(request);
+                if (!details.isEmpty())
+                        return ResponseUtil.buildListBaseResponse(ApiReturn.BAD_REQUEST.code(),
+                                        ApiReturn.BAD_REQUEST.description(), details);
+                
+                BeanUtils.copyProperties(request, user);
+                
+                roles.add(role);
+                user.setRoles(roles);
+                user.setUsername(request.getEmail());
+                user.setPassword(encoder.encode(request.getPassword()));
+                stmUserRepository.save(user);
+                user.setCreateBy(User.builder().id(user.getId()).build());
+                user.setUpdateBy(User.builder().id(user.getId()).build());
+                stmUserRepository.save(user);
+                return ResponseUtil.buildSuccessBaseResponse("Success ✅",
+                                "สมัครสมาชิกสำเร็จ");
+        }
+
         private List<BaseDetailsResponse> validateSignUpRequest(SignUpRequest request, String lineId) {
                 List<BaseDetailsResponse> details = new ArrayList<>();
                 if (stmUserRepository.existsByEmail(request.getEmail()))
@@ -267,6 +293,15 @@ public class UserServiceImpl implements UserService {
                         details.add(new BaseDetailsResponse("hn", "หมายเลขผู้ป่วยนี้ถูกใช้งานแล้ว"));
                 if (StringUtils.isNotBlank(lineId) && stmUserRepository.existsByLineId(lineId))
                         details.add(new BaseDetailsResponse("line", "Line นี้ถูกใช้งานแล้ว"));
+                return details;
+        }
+        
+        private List<BaseDetailsResponse> validateSignUpRequest(CreateUserRequest request) {
+                List<BaseDetailsResponse> details = new ArrayList<>();
+                if (stmUserRepository.existsByEmail(request.getEmail()))
+                        details.add(new BaseDetailsResponse("email", "อีเมลนี้ถูกใช้งานแล้ว"));
+                if (stmUserRepository.existsByPhoneNumber(request.getPhoneNumber()))
+                        details.add(new BaseDetailsResponse("phone", "เบอร์นี้ถูกใช้งานแล้ว"));
                 return details;
         }
 

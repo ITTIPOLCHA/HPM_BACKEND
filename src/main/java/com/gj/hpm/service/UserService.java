@@ -3,6 +3,7 @@ package com.gj.hpm.service;
 import java.util.List;
 
 import com.gj.hpm.dto.request.BaseRequest;
+import com.gj.hpm.dto.request.CreateUserRequest;
 import com.gj.hpm.dto.request.GetAdminPagingRequest;
 import com.gj.hpm.dto.request.GetUserByIdRequest;
 import com.gj.hpm.dto.request.GetUserPagingRequest;
@@ -27,6 +28,8 @@ public interface UserService {
     JwtResponse signIn(SignInRequest request);
 
     BaseResponse signUp(SignUpRequest request);
+
+    BaseResponse createUser(CreateUserRequest request);
 
     BaseResponse changePassword(String token, PasswordChangeRequest request);
 
