@@ -517,7 +517,7 @@ public class UserServiceImpl implements UserService {
                 if (verify != null) {
                         stpBloodPressureRepository.deleteByPatient_Id(request.getUserId());
                         stmUserRepository.deleteById(request.getUserId());
-                        if (verify.getLineId() != null) {
+                        if (StringUtils.isNotBlank(verify.getLineId())) {
                                 if (!new LineUtil().changeRichmenu(verify.getLineId(),
                                                 richMenuLogin, token))
                                         return ResponseUtil.buildErrorBaseResponse(
