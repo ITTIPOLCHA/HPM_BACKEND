@@ -43,9 +43,9 @@ public class UserController {
     // ! C
     @PostMapping("/a/createUser")
     public ResponseEntity<?> createUser(@RequestHeader("Authorization") String token,
-            @RequestBody GetUserByIdRequest request) {
+            @RequestBody CreateUserRequest request) {
         try {
-            GetUserResponse response = userService.getUserById(request);
+            BaseResponse response = userService.createUser(request);
             return ResponseEntity.ok().body(response);
         } catch (NotFoundException e) {
             return ResponseEntity.badRequest().body(e.getResponse());
@@ -56,9 +56,9 @@ public class UserController {
     // ? Get By Id
     @PostMapping("/a/getUserById")
     public ResponseEntity<?> getUserById(@RequestHeader("Authorization") String token,
-            @RequestBody CreateUserRequest request) {
+            @RequestBody GetUserByIdRequest request) {
         try {
-            BaseResponse response = userService.createUser(request);
+            GetUserResponse response = userService.getUserById(request);
             return ResponseEntity.ok().body(response);
         } catch (NotFoundException e) {
             return ResponseEntity.badRequest().body(e.getResponse());
