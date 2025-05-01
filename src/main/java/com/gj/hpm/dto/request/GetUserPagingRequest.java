@@ -22,5 +22,6 @@ public class GetUserPagingRequest extends BasePaginationRequest {
     private String statusFlag;
     private String level;
     private String gender;
-    private int age;
+    private Integer ageFrom;
+    private Integer ageTo;
 }
