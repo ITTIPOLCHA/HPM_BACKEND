@@ -65,7 +65,9 @@ import com.gj.hpm.dto.request.GetBloodPressureRequest;
 import com.gj.hpm.dto.request.UpdateBloodPressureByIdRequest;
 import com.gj.hpm.dto.request.UpdateBloodPressureByTokenRequest;
 import com.gj.hpm.dto.response.BaseResponse;
+import com.gj.hpm.dto.response.BaseStatusResponse;
 import com.gj.hpm.dto.response.GetBloodPressureDetailPagingResponse;
+import com.gj.hpm.dto.response.GetBloodPressureOnPhotoResponse;
 import com.gj.hpm.dto.response.GetBloodPressureResponse;
 import com.gj.hpm.dto.response.JwtClaimsDTO;
 import com.gj.hpm.entity.BloodPressureRecord;
@@ -204,7 +206,7 @@ public class BloodPressureRecordServiceImpl implements BloodPressureRecordServic
         }
 
         @Override
-        public CreateBloodPressureRequest uploadImage(JwtClaimsDTO dto, String base64Image) {
+        public GetBloodPressureOnPhotoResponse uploadImage(JwtClaimsDTO dto, String base64Image) {
                 // Set up
                 HttpHeaders headers = new HttpHeaders();
                 headers.setContentType(MediaType.APPLICATION_JSON);
@@ -224,7 +226,7 @@ public class BloodPressureRecordServiceImpl implements BloodPressureRecordServic
                 payload.put("messages", new Object[] { userMessage });
                 HttpEntity<Map<String, Object>> requestEntity = new HttpEntity<>(payload, headers);
 
-                CreateBloodPressureRequest bloodPressureRequest = new CreateBloodPressureRequest();
+                GetBloodPressureOnPhotoResponse bloodPressureRequest = new GetBloodPressureOnPhotoResponse();
                 try {
                         @SuppressWarnings("unchecked")
                         Map<String, Object> response = restTemplate
@@ -240,15 +242,24 @@ public class BloodPressureRecordServiceImpl implements BloodPressureRecordServic
                                 int systolic = rootNode.get("systolic").asInt();
                                 int diastolic = rootNode.get("diastolic").asInt();
                                 int pulse = rootNode.get("pulse").asInt();
-                                bloodPressureRequest.setSystolicPressure(systolic);
-                                bloodPressureRequest.setDiastolicPressure(diastolic);
-                                bloodPressureRequest.setPulseRate(pulse);
+                                bloodPressureRequest.setSys(systolic);
+                                bloodPressureRequest.setDia(diastolic);
+                                bloodPressureRequest.setPul(pulse);
+                                BaseStatusResponse status = new BaseStatusResponse();
+                                status.setCode(ApiReturn.SUCCESS.code());
+                                status.setDescription(ApiReturn.SUCCESS.description());
+                                bloodPressureRequest.setStatus(status);
                                 return bloodPressureRequest;
+
                         }
                 } catch (Exception e) {
-                        bloodPressureRequest.setSystolicPressure(0);
-                        bloodPressureRequest.setDiastolicPressure(0);
-                        bloodPressureRequest.setPulseRate(0);
+                        bloodPressureRequest.setSys(0);
+                        bloodPressureRequest.setDia(0);
+                        bloodPressureRequest.setPul(0);
+                        BaseStatusResponse status = new BaseStatusResponse();
+                        status.setCode(ApiReturn.BAD_REQUEST.code());
+                        status.setDescription(ApiReturn.BAD_REQUEST.description());
+                        bloodPressureRequest.setStatus(status);
                         return bloodPressureRequest;
                 }
                 return bloodPressureRequest;

@@ -26,6 +26,7 @@ import com.gj.hpm.dto.request.GetBloodPressureRequest;
 import com.gj.hpm.dto.request.UpdateBloodPressureByIdRequest;
 import com.gj.hpm.dto.request.UpdateBloodPressureByTokenRequest;
 import com.gj.hpm.dto.response.BaseResponse;
+import com.gj.hpm.dto.response.GetBloodPressureOnPhotoResponse;
 import com.gj.hpm.dto.response.GetBloodPressureResponse;
 import com.gj.hpm.dto.response.JwtClaimsDTO;
 import com.gj.hpm.exception.NotFoundException;
@@ -72,7 +73,7 @@ public class BloodPressureController {
                 return ResponseEntity.badRequest().body(
                         ResponseUtil.buildErrorBaseResponse("Invalid Token ❌", "Token ไม่ถูกต้อง"));
             }
-            CreateBloodPressureRequest response = bloodPressureService.uploadImage(claims, request.getRequestId());
+            GetBloodPressureOnPhotoResponse response = bloodPressureService.uploadImage(claims, request.getRequestId());
             return ResponseEntity.ok().body(response);
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());

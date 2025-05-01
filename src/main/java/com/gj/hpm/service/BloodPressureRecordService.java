@@ -13,6 +13,7 @@ import com.gj.hpm.dto.request.GetBloodPressureRequest;
 import com.gj.hpm.dto.request.UpdateBloodPressureByIdRequest;
 import com.gj.hpm.dto.request.UpdateBloodPressureByTokenRequest;
 import com.gj.hpm.dto.response.BaseResponse;
+import com.gj.hpm.dto.response.GetBloodPressureOnPhotoResponse;
 import com.gj.hpm.dto.response.GetBloodPressureResponse;
 import com.gj.hpm.dto.response.JwtClaimsDTO;
 
@@ -21,7 +22,7 @@ public interface BloodPressureRecordService {
     
     BaseResponse createBloodPressure(JwtClaimsDTO dto, CreateBloodPressureRequest request);
 
-    CreateBloodPressureRequest uploadImage(JwtClaimsDTO dto, String base64Image);
+    GetBloodPressureOnPhotoResponse uploadImage(JwtClaimsDTO dto, String base64Image);
 
     byte[] generateExcelFile() throws IOException;
 
