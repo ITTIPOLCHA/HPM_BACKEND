@@ -2,11 +2,9 @@ package com.gj.hpm.service.impl;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.lang.reflect.Field;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Date;
@@ -206,58 +204,54 @@ public class BloodPressureRecordServiceImpl implements BloodPressureRecordServic
         }
 
         @Override
-        public BaseResponse uploadImage(JwtClaimsDTO dto, String base64Image) {
-                if (!stpBloodPressureRepository
-                                .existsByCreateDateAfterAndCreateById(LocalDateTime.now().minusHours(1),
-                                                dto.getJwtId())) {
-                        // Set up
-                        HttpHeaders headers = new HttpHeaders();
-                        headers.setContentType(MediaType.APPLICATION_JSON);
-                        headers.setBearerAuth(apiKey);
-                        Map<String, Object> payload = new HashMap<>();
-                        payload.put("model", "gpt-4o");
-                        Map<String, Object> userMessage = new HashMap<>();
-                        userMessage.put("role", "user");
-                        Map<String, Object> content = new HashMap<>();
-                        content.put("type", "text");
-                        content.put("text", "systolic, diastolic, pulse require json from only.");
-                        Map<String, Object> imageContent = new HashMap<>();
-                        imageContent.put("type", "image_url");
-                        imageContent.put("image_url",
-                                        Map.of("detail", "low", "url", base64Image));
-                        userMessage.put("content", new Object[] { content, imageContent });
-                        payload.put("messages", new Object[] { userMessage });
-                        HttpEntity<Map<String, Object>> requestEntity = new HttpEntity<>(payload, headers);
-                        try {
+        public CreateBloodPressureRequest uploadImage(JwtClaimsDTO dto, String base64Image) {
+                // Set up
+                HttpHeaders headers = new HttpHeaders();
+                headers.setContentType(MediaType.APPLICATION_JSON);
+                headers.setBearerAuth(apiKey);
+                Map<String, Object> payload = new HashMap<>();
+                payload.put("model", "gpt-4o");
+                Map<String, Object> userMessage = new HashMap<>();
+                userMessage.put("role", "user");
+                Map<String, Object> content = new HashMap<>();
+                content.put("type", "text");
+                content.put("text", "systolic, diastolic, pulse require json from only.");
+                Map<String, Object> imageContent = new HashMap<>();
+                imageContent.put("type", "image_url");
+                imageContent.put("image_url",
+                                Map.of("detail", "low", "url", base64Image));
+                userMessage.put("content", new Object[] { content, imageContent });
+                payload.put("messages", new Object[] { userMessage });
+                HttpEntity<Map<String, Object>> requestEntity = new HttpEntity<>(payload, headers);
+
+                CreateBloodPressureRequest bloodPressureRequest = new CreateBloodPressureRequest();
+                try {
+                        @SuppressWarnings("unchecked")
+                        Map<String, Object> response = restTemplate
+                                        .exchange(apiUrl, HttpMethod.POST, requestEntity, Map.class).getBody();
+                        // Extract and return the response
+                        if (response != null && response.containsKey("choices")) {
                                 @SuppressWarnings("unchecked")
-                                Map<String, Object> response = restTemplate
-                                                .exchange(apiUrl, HttpMethod.POST, requestEntity, Map.class).getBody();
-                                // Extract and return the response
-                                if (response != null && response.containsKey("choices")) {
-                                        @SuppressWarnings("unchecked")
-                                        String result = (String) ((Map<String, Object>) ((List<Map<String, Object>>) response
-                                                        .get("choices")).get(0).get("message")).get("content");
-                                        String jsonString = result.substring(result.indexOf("{"));
-                                        ObjectMapper objectMapper = new ObjectMapper();
-                                        JsonNode rootNode = objectMapper.readTree(jsonString);
-                                        int systolic = rootNode.get("systolic").asInt();
-                                        int diastolic = rootNode.get("diastolic").asInt();
-                                        int pulse = rootNode.get("pulse").asInt();
-                                        CreateBloodPressureRequest bloodPressureRequest = new CreateBloodPressureRequest();
-                                        bloodPressureRequest.setSystolicPressure(systolic);
-                                        bloodPressureRequest.setDiastolicPressure(diastolic);
-                                        bloodPressureRequest.setPulseRate(pulse);
-                                        return createBloodPressure(dto, bloodPressureRequest);
-                                }
-                        } catch (Exception e) {
-                                return ResponseUtil.buildBaseResponse(ApiReturn.BAD_REQUEST.code(),
-                                                ApiReturn.BAD_REQUEST.description(), "Fail ❌",
-                                                e.getMessage());
+                                String result = (String) ((Map<String, Object>) ((List<Map<String, Object>>) response
+                                                .get("choices")).get(0).get("message")).get("content");
+                                String jsonString = result.substring(result.indexOf("{"));
+                                ObjectMapper objectMapper = new ObjectMapper();
+                                JsonNode rootNode = objectMapper.readTree(jsonString);
+                                int systolic = rootNode.get("systolic").asInt();
+                                int diastolic = rootNode.get("diastolic").asInt();
+                                int pulse = rootNode.get("pulse").asInt();
+                                bloodPressureRequest.setSystolicPressure(systolic);
+                                bloodPressureRequest.setDiastolicPressure(diastolic);
+                                bloodPressureRequest.setPulseRate(pulse);
+                                return bloodPressureRequest;
                         }
+                } catch (Exception e) {
+                        bloodPressureRequest.setSystolicPressure(0);
+                        bloodPressureRequest.setDiastolicPressure(0);
+                        bloodPressureRequest.setPulseRate(0);
+                        return bloodPressureRequest;
                 }
-                return ResponseUtil.buildBaseResponse(ApiReturn.BAD_REQUEST.code(),
-                                ApiReturn.BAD_REQUEST.description(), "Fail ❌",
-                                "ข้อมูลความดันโลหิตถูกบันทึกไปแล้ว ใน 1 ชั่วโมงนี้");
+                return bloodPressureRequest;
         }
 
         @Override

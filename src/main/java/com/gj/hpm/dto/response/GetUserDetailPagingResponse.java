@@ -14,6 +14,8 @@ public class GetUserDetailPagingResponse extends BaseResponse {
     private String phoneNumber;
     private String firstName;
     private String lastName;
+    private String gender;
+    private int age;
     private String lineName;
     private String statusFlag;
     private String level;

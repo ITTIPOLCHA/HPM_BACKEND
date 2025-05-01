@@ -21,7 +21,7 @@ public interface BloodPressureRecordService {
     
     BaseResponse createBloodPressure(JwtClaimsDTO dto, CreateBloodPressureRequest request);
 
-    BaseResponse uploadImage(JwtClaimsDTO dto, String base64Image);
+    CreateBloodPressureRequest uploadImage(JwtClaimsDTO dto, String base64Image);
 
     byte[] generateExcelFile() throws IOException;
 

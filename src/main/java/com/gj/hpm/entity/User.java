@@ -35,6 +35,8 @@ public class User extends BaseEntity {
     private String phoneNumber;
     private String firstName;
     private String lastName;
+    private String gender;
+    private int age;
 
     // Line
     private String lineId;

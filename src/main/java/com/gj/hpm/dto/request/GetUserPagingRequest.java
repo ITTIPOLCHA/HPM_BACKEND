@@ -21,4 +21,6 @@ public class GetUserPagingRequest extends BasePaginationRequest {
     private String hospitalNumber;
     private String statusFlag;
     private String level;
+    private String gender;
+    private int age;
 }

@@ -406,6 +406,8 @@ public class UserServiceImpl implements UserService {
                 addCriteriaIfNotEmpty(criteria, "phoneNumber", request.getPhoneNumber());
                 addCriteriaIfNotEmpty(criteria, "hospitalNumber", request.getHospitalNumber());
                 addCriteriaIfNotEmpty(criteria, "level", request.getLevel());
+                addCriteriaIfNotEmpty(criteria, "gender", request.getGender());
+                addCriteriaIfNotEmpty(criteria, "age", String.valueOf(request.getAge()));
                 return criteria;
         }
 
@@ -496,6 +498,8 @@ public class UserServiceImpl implements UserService {
                 update.set("username", request.getEmail());
                 update.set("phoneNumber", request.getPhoneNumber());
                 update.set("hospitalNumber", request.getHospitalNumber());
+                update.set("age", request.getAge());
+                update.set("gender", request.getGender());
                 update.set("updateBy", User.builder().id(request.getActionId()).build());
                 update.set("updateDate", LocalDateTime.now());
                 UpdateResult result = mongoTemplate.updateFirst(
@@ -518,6 +522,8 @@ public class UserServiceImpl implements UserService {
                 update.set("username", request.getEmail());
                 update.set("phoneNumber", request.getPhoneNumber());
                 update.set("hospitalNumber", request.getHospitalNumber());
+                update.set("age", request.getAge());
+                update.set("gender", request.getGender());
                 update.set("updateBy", User.builder().id(request.getActionId()).build());
                 update.set("updateDate", LocalDateTime.now());
                 UpdateResult result = mongoTemplate.updateFirst(

@@ -29,6 +29,8 @@ public class SignUpRequest extends BaseRequest {
     private String firstName;
     @NotEmpty(message = "{notEmpty.message}")
     private String lastName;
+    private String gender;
+    private int age;
     // line token
     private String lineToken;
 }

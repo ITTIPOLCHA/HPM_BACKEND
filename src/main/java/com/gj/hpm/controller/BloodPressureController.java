@@ -72,7 +72,7 @@ public class BloodPressureController {
                 return ResponseEntity.badRequest().body(
                         ResponseUtil.buildErrorBaseResponse("Invalid Token ❌", "Token ไม่ถูกต้อง"));
             }
-            BaseResponse response = bloodPressureService.uploadImage(claims, request.getRequestId());
+            CreateBloodPressureRequest response = bloodPressureService.uploadImage(claims, request.getRequestId());
             return ResponseEntity.ok().body(response);
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());

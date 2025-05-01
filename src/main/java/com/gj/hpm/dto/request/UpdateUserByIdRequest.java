@@ -27,4 +27,7 @@ public class UpdateUserByIdRequest extends BaseRequest {
     private String firstName;
     @NotBlank(message = "{notEmpty.message}")
     private String lastName;
+    @NotBlank(message = "{notEmpty.message}")
+    private String gender;
+    private int age;
 }

@@ -18,6 +18,8 @@ public class GetUserResponse extends BaseResponse {
     private String firstName;
     private String lastName;
     private String lineName;
+    private String gender;
+    private int age;
     private String pictureUrl;
     private String statusFlag;
     private Level level;
