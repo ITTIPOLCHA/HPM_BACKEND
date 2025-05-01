@@ -407,7 +407,7 @@ public class UserServiceImpl implements UserService {
                 addCriteriaIfNotEmpty(criteria, "hospitalNumber", request.getHospitalNumber());
                 addCriteriaIfNotEmpty(criteria, "level", request.getLevel());
                 addCriteriaIfNotEmpty(criteria, "gender", request.getGender());
-                addCriteriaIfNotEmpty(criteria, "age", String.valueOf(request.getAge()));
+                // addCriteriaIfNotEmpty(criteria, "age", String.valueOf(request.getAge()));
                 return criteria;
         }
 
