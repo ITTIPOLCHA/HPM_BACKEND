@@ -14,4 +14,6 @@ public class GetUserListByStatusFlagResponse {
     private String statusFlag;
     private String pictureUrl;
     private boolean verified;
+    private String gender;
+    private int age;
 }

@@ -14,4 +14,6 @@ public class GetUserListByLevelResponse {
     private String level;
     private String pictureUrl;
     private boolean verified;
+    private String gender;
+    private int age;
 }
